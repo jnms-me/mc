@@ -1,0 +1,37 @@
+2c # VarInt packetType
+
+00 00 00 28 # int entityId 40
+
+00 # bool isHardcode false
+
+# array dimensionIds
+03 # varInt length 3
+    13 6d696e6563726166743a6f766572776f726c64
+    14 6d696e6563726166743a7468655f6e6574686572
+    11 6d696e6563726166743a7468655f656e64
+
+14 # varInt maxPlayers 20
+0a # varInt renderDistance 10
+0a # varInt simulationDistance 10
+
+00 # bool reducedDebugInfo false
+01 # bool enableRespawnScreen true
+00 # bool doLimitedCrafting false
+
+00 # varInt dimensionType 0
+
+13 6d696e6563726166743a6f766572776f726c64 # string dimensionName "minecraft:overworld"
+
+8ba841fb1cc1a604
+
+01 # gameMode
+ff # lastGameMode
+
+00 # isDebug
+00 # isFlat
+
+00 # hasDeathLocation
+
+00 # portalCooldown
+3f # seaLevel
+00 # enforcesSecureChat

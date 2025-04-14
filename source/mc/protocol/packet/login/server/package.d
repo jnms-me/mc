@@ -1,0 +1,10 @@
+module mc.protocol.packet.login.server;
+
+public import mc.protocol.packet.login.server.login_success : LoginSuccessPacket;
+
+@safe:
+
+enum PacketType : int
+{
+    loginSuccess = 0x02,
+}
