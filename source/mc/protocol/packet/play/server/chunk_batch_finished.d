@@ -1,13 +1,16 @@
 module mc.protocol.packet.play.server.chunk_batch_finished;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.play.server : PacketType;
-import mc.protocol.stream_utils : writeBytes, writeVar;
+import mc.protocol.packet.traits : isServerPacket;
+import mc.protocol.stream : OutputStream;
 
 @safe:
 
-class ChunkBatchFinishedPacket : Packet
+final
+class ChunkBatchFinishedPacket
 {
+    static assert(isServerPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.chunkBatchFinished;
 
     private int m_batchSize;
@@ -17,14 +20,8 @@ class ChunkBatchFinishedPacket : Packet
         m_batchSize = batchSize;
     }
 
-    override
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
-        const(ubyte)[] content;
-        content.writeVar!int(ct_packetType);
-        content.writeVar!int(m_batchSize);
-
-        output.writeVar!int(cast(int) content.length);
-        output.writeBytes(content);
+        output.writeVar!int(m_batchSize);
     }
 }

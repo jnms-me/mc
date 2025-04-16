@@ -1,15 +1,16 @@
 module mc.protocol.packet.status.client.status_request;
 
-import std.uuid : UUID;
-
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.status.client : PacketType;
-import mc.protocol.stream_utils : read, readBytes, readString, readVar;
+import mc.protocol.packet.traits : isClientPacket;
+import mc.protocol.stream : InputStream;
 
 @safe:
 
-class StatusRequestPacket : Packet
+final
+class StatusRequestPacket
 {
+    static assert(isClientPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.statusRequest;
 
     private
@@ -18,7 +19,7 @@ class StatusRequestPacket : Packet
     }
 
     static
-    typeof(this) deserialize(ref const(ubyte)[] input)
+    typeof(this) deserialize(ref InputStream input)
     {
         return new typeof(this);
     }

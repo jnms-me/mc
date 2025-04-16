@@ -2,14 +2,17 @@ module mc.protocol.packet.login.server.login_success;
 
 import std.uuid : UUID;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.login.server : PacketType;
-import mc.protocol.stream_utils : write, writeBytes, writeString, writeVar;
+import mc.protocol.packet.traits : isServerPacket;
+import mc.protocol.stream : OutputStream;
 
 @safe:
 
-class LoginSuccessPacket : Packet
+final
+class LoginSuccessPacket
 {
+    static assert(isServerPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.loginSuccess;
 
     private UUID m_uuid;
@@ -27,16 +30,10 @@ class LoginSuccessPacket : Packet
     string getUsername() const
         => m_username;
 
-    override
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
-        const(ubyte)[] content;
-        content.writeVar!int(ct_packetType);
-        content.write(m_uuid.data);
-        content.writeString(m_username);
-        content.writeVar!int(0); // An empty properties array
-
-        output.writeVar!int(cast(int) content.length);
-        output.writeBytes(content);
+        output.write(m_uuid.data);
+        output.writePrefixedString(m_username);
+        output.writeVar!int(0); // An empty properties array
     }
 }

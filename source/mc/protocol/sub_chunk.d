@@ -3,7 +3,7 @@ module mc.protocol.sub_chunk;
 import std.conv : to;
 import std.math : log2;
 
-import mc.protocol.stream_utils : write, writeBytes, writeString, writeVar;
+import mc.protocol.stream : OutputStream;
 
 @safe:
 
@@ -33,7 +33,7 @@ struct SubChunk
         return chunk;
     }
 
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
         output.write!short(m_nonAirBlockCount);
 

@@ -1,13 +1,16 @@
 module mc.protocol.packet.common.client.client_info;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.config.client : PacketType;
-import mc.protocol.stream_utils : read, readBytes, readString, readVar;
+import mc.protocol.packet.traits : isClientPacket;
+import mc.protocol.stream : InputStream;
 
 @safe:
 
-class ClientInfoPacket : Packet
+final
+class ClientInfoPacket
 {
+    static assert(isClientPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.pluginMessage;
 
     private string m_locale;
@@ -53,11 +56,11 @@ class ClientInfoPacket : Packet
         => m_particleLevel;
 
     static
-    typeof(this) deserialize(ref const(ubyte)[] input)
+    typeof(this) deserialize(ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 
-        instance.m_locale              = input.readString;
+        instance.m_locale              = input.readPrefixedString;
         instance.m_renderDistance      = input.read!ubyte;
         instance.m_chatMode            = input.readVar!int;
         instance.m_chatColors          = input.read!bool;

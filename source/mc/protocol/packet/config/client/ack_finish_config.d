@@ -1,13 +1,16 @@
 module mc.protocol.packet.config.client.ack_finish_config;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.config.client : PacketType;
-import mc.protocol.stream_utils : read, readBytes, readString, readVar;
+import mc.protocol.packet.traits : isClientPacket;
+import mc.protocol.stream : InputStream;
 
 @safe:
 
-class AckFinishConfigPacket : Packet
+final
+class AckFinishConfigPacket
 {
+    static assert(isClientPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.ackFinishConfig;
 
     private
@@ -16,7 +19,7 @@ class AckFinishConfigPacket : Packet
     }
 
     static
-    typeof(this) deserialize(ref const(ubyte)[] input)
+    typeof(this) deserialize(ref InputStream input)
     {
         return new typeof(this);
     }

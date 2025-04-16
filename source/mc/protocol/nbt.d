@@ -7,7 +7,7 @@ import std.format : f = format;
 import std.meta : AliasSeq;
 import std.traits : isArray, isAssociativeArray, isSomeString, KeyType, Unqual, ValueType;
 
-import mc.protocol.stream_utils : write, writeBytes, writeString, writeVar;
+import mc.protocol.stream : OutputStream;
 import mc.util.meta : staticAmong;
 
 @safe:
@@ -127,7 +127,7 @@ scope:
     alias getCompound  = get!"compound";
 
     private
-    void serializeInternal(ref const(ubyte)[] output) const
+    void serializeInternal(ref OutputStream output) const
     {
         switch (m_tagType)
         {
@@ -176,7 +176,7 @@ scope:
                     enforce(
                         getList[1 .. $]
                             .map!((ref el) => el.tagType)
-                            .all!(el => el == listTagType),
+                            .all!(el => el == listTagType), // true for []
                         "All list elements must be of the same type",
                     );
                 }
@@ -188,11 +188,11 @@ scope:
 
         case TagType.compound:
             {
-                foreach (const char[] key, ref const Nbt value; getCompound)
+                foreach (const immutable(char)[] key, ref const Nbt value; getCompound)
                 {
                     output.write!ubyte(value.tagType);
                     output.write!ushort(key.length.to!ushort);
-                    output.writeBytes(cast(const ubyte[]) key);
+                    output.writeBytes(cast(const immutable(ubyte)[]) key);
                     value.serializeInternal(output);
                 }
                 output.write!ubyte(TagType.end);
@@ -204,10 +204,10 @@ scope:
         }
     }
 
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
         enforce(tagType == TagType.compound, "Can only serialize compound tags");
-        output.write(TagType.compound); // Root compound tag has no name
+        output.write!ubyte(TagType.compound); // Root compound tag has no name
         serializeInternal(output);
     }
 }

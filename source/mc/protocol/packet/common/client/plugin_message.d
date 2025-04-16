@@ -1,13 +1,16 @@
 module mc.protocol.packet.common.client.plugin_message;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.config.client : PacketType;
-import mc.protocol.stream_utils : read, readBytes, readString, readVar;
+import mc.protocol.packet.traits : isClientPacket;
+import mc.protocol.stream : InputStream;
 
 @safe:
 
-class PluginMessagePacket : Packet
+final
+class PluginMessagePacket
 {
+    static assert(isClientPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.pluginMessage;
 
     private string m_channel;
@@ -25,12 +28,12 @@ class PluginMessagePacket : Packet
         => m_data;
 
     static
-    typeof(this) deserialize(ref const(ubyte)[] input)
+    typeof(this) deserialize(ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 
-        instance.m_channel = input.readString;
-        instance.m_data = input.readBytes(input.length);
+        instance.m_channel = input.readPrefixedString;
+        instance.m_data = input.readBytes(input.bytesLength);
 
         return instance;
     }

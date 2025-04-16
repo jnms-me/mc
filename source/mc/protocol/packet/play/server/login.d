@@ -5,14 +5,17 @@ import std.conv : to;
 import std.uuid : UUID;
 
 import mc.protocol.enums : GameMode;
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.play.server : PacketType;
-import mc.protocol.stream_utils : write, writeBytes, writeString, writeVar;
+import mc.protocol.packet.traits : isServerPacket;
+import mc.protocol.stream : OutputStream;
 
 @safe:
 
-class LoginPacket : Packet
+final
+class LoginPacket
 {
+    static assert(isServerPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.login;
 
     private int m_entityId;
@@ -39,7 +42,11 @@ class LoginPacket : Packet
     {
         m_entityId = 0;
         m_isHardCore = false;
-        m_dimensionIds = ["minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"];
+        m_dimensionIds = [
+            "minecraft:overworld",
+            "minecraft:the_nether",
+            "minecraft:the_end"
+        ];
         m_maxPlayers = 20;
         m_viewDistance = 10;
         m_simulationDistance = 10;
@@ -58,34 +65,28 @@ class LoginPacket : Packet
         m_enforcesSecureChat = false;
     }
 
-    override
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
-        const(ubyte)[] content;
-        content.writeVar!int(ct_packetType);
-        content.write!int(m_entityId);
-        content.write!bool(m_isHardCore);
-        content.writeVar!int(cast(int) m_dimensionIds.length); // Prefixed array length
-        m_dimensionIds.each!(s => content.writeString(s));// Prefixed array contents
-        content.writeVar!int(m_maxPlayers);
-        content.writeVar!int(m_viewDistance);
-        content.writeVar!int(m_simulationDistance);
-        content.write!bool(m_reducedDebugInfo);
-        content.write!bool(m_enableRespawnScreen);
-        content.write!bool(m_limitedCrafting);
-        content.writeVar!int(m_dimensionType);
-        content.writeString(m_dimensionId);
-        content.write!(ubyte[8])(m_seedHash);
-        content.write!ubyte(m_gameMode);
-        content.write!ubyte(m_lastGameMode);
-        content.write!bool(m_isDebugWorld);
-        content.write!bool(m_isSuperflatWorld);
-        content.write!bool(false); // Don't pass a death location
-        content.writeVar!int(m_portalCooldownTicks);
-        content.writeVar!int(m_seaLevel);
-        content.write!bool(m_enforcesSecureChat);
-
-        output.writeVar!int(content.length.to!int);
-        output.writeBytes(content);
+        output.write!int(m_entityId);
+        output.write!bool(m_isHardCore);
+        output.writeVar!int(m_dimensionIds.length.to!int); // Prefixed array length
+        m_dimensionIds.each!(s => output.writePrefixedString(s)); // Prefixed array contents
+        output.writeVar!int(m_maxPlayers);
+        output.writeVar!int(m_viewDistance);
+        output.writeVar!int(m_simulationDistance);
+        output.write!bool(m_reducedDebugInfo);
+        output.write!bool(m_enableRespawnScreen);
+        output.write!bool(m_limitedCrafting);
+        output.writeVar!int(m_dimensionType);
+        output.writePrefixedString(m_dimensionId);
+        output.write(m_seedHash);
+        output.write!ubyte(m_gameMode);
+        output.write!ubyte(m_lastGameMode);
+        output.write!bool(m_isDebugWorld);
+        output.write!bool(m_isSuperflatWorld);
+        output.write!bool(false); // Don't pass a death location
+        output.writeVar!int(m_portalCooldownTicks);
+        output.writeVar!int(m_seaLevel);
+        output.write!bool(m_enforcesSecureChat);
     }
 }

@@ -2,14 +2,17 @@ module mc.protocol.packet.login.client.login_start;
 
 import std.uuid : UUID;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.login.client : PacketType;
-import mc.protocol.stream_utils : read, readBytes, readString, readVar;
+import mc.protocol.packet.traits : isClientPacket;
+import mc.protocol.stream : InputStream;
 
 @safe:
 
-class LoginStartPacket : Packet
+final
+class LoginStartPacket
 {
+    static assert(isClientPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.loginStart;
 
     private string m_userName;
@@ -27,11 +30,11 @@ class LoginStartPacket : Packet
         => m_uuid;
 
     static
-    typeof(this) deserialize(ref const(ubyte)[] input)
+    typeof(this) deserialize(ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 
-        instance.m_userName = input.readString;
+        instance.m_userName = input.readPrefixedString;
         instance.m_uuid = UUID(input.read!(ubyte[16]));
 
         return instance;

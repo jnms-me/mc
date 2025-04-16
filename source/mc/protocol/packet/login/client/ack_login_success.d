@@ -1,13 +1,16 @@
 module mc.protocol.packet.login.client.ack_login_success;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.login.client : PacketType;
-import mc.protocol.stream_utils : read, readBytes, readString, readVar;
+import mc.protocol.packet.traits : isClientPacket;
+import mc.protocol.stream : InputStream;
 
 @safe:
 
-class AckLoginSuccessPacket : Packet
+final
+class AckLoginSuccessPacket
 {
+    static assert(isClientPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.ackLoginSuccess;
 
     private
@@ -16,7 +19,7 @@ class AckLoginSuccessPacket : Packet
     }
 
     static
-    typeof(this) deserialize(ref const(ubyte)[] input)
+    typeof(this) deserialize(ref InputStream input)
     {
         return new typeof(this);
     }

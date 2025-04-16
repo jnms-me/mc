@@ -1,12 +1,18 @@
 module mc.protocol.packet.handshake.client.handshake;
 
-import mc.protocol.packet.base : Packet;
-import mc.protocol.stream_utils : read, readBytes, readString, readVar;
+import mc.protocol.packet.handshake.client : PacketType;
+import mc.protocol.packet.traits : isClientPacket;
+import mc.protocol.stream : InputStream;
 
 @safe:
 
-class HandshakePacket : Packet
+final
+class HandshakePacket
 {
+    static assert(isClientPacket!(typeof(this)));
+
+    enum PacketType ct_packetType = PacketType.handshake;
+
     private int m_protocolVersion;
     private string m_serverAddress;
     private ushort m_port;
@@ -30,12 +36,12 @@ class HandshakePacket : Packet
         => m_nextState;
 
     static
-    typeof(this) deserialize(ref const(ubyte)[] input)
+    typeof(this) deserialize(ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 
         instance.m_protocolVersion = input.readVar!int;
-        instance.m_serverAddress = input.readString;
+        instance.m_serverAddress = input.readPrefixedString;
         instance.m_port = input.read!ushort;
         instance.m_nextState = input.readVar!int;
 

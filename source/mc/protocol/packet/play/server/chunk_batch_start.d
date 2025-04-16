@@ -1,26 +1,23 @@
 module mc.protocol.packet.play.server.chunk_batch_start;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.play.server : PacketType;
-import mc.protocol.stream_utils : writeBytes, writeVar;
+import mc.protocol.packet.traits : isServerPacket;
+import mc.protocol.stream : OutputStream;
 
 @safe:
 
-class ChunkBatchStartPacket : Packet
+final
+class ChunkBatchStartPacket
 {
+    static assert(isServerPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.chunkBatchStart;
 
     this()
     {
     }
 
-    override
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
-        const(ubyte)[] content;
-        content.writeVar!int(ct_packetType);
-
-        output.writeVar!int(cast(int) content.length);
-        output.writeBytes(content);
     }
 }

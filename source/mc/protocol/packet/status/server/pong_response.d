@@ -1,13 +1,16 @@
 module mc.protocol.packet.status.server.pong_response;
 
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.status.server : PacketType;
-import mc.protocol.stream_utils : write, writeBytes, writeString, writeVar;
+import mc.protocol.packet.traits : isServerPacket;
+import mc.protocol.stream : OutputStream;
 
 @safe:
 
-class PongResponsePacket : Packet
+final
+class PongResponsePacket
 {
+    static assert(isServerPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.pongResponse;
 
     private ulong m_payload;
@@ -20,14 +23,8 @@ class PongResponsePacket : Packet
     ulong getPayload() const
         => m_payload;
 
-    override
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
-        const(ubyte)[] content;
-        content.writeVar!int(ct_packetType);
-        content.write!ulong(m_payload);
-
-        output.writeVar!int(cast(int) content.length);
-        output.writeBytes(content);
+        output.write!ulong(m_payload);
     }
 }

@@ -4,17 +4,20 @@ import std.algorithm : each, move;
 import std.conv : to;
 
 import mc.protocol.nbt : Nbt;
-import mc.protocol.packet.base : Packet;
 import mc.protocol.packet.play.server : PacketType;
-import mc.protocol.stream_utils : write, writeBytes, writeNbt, writeString, writeVar;
+import mc.protocol.packet.traits : isServerPacket;
+import mc.protocol.stream : OutputStream;
 import mc.protocol.sub_chunk : SubChunk;
 
 @safe:
 
-class ChunkDataPacket : Packet
+final
+class ChunkDataPacket
 {
+    static assert(isServerPacket!(typeof(this)));
+
     enum PacketType ct_packetType = PacketType.chunkData;
-    
+
     private int m_x;
     private int m_z;
     private Nbt m_heightMaps;
@@ -28,35 +31,29 @@ class ChunkDataPacket : Packet
         m_subChunks = subChunks;
     }
 
-    override
-    void serialize(ref const(ubyte)[] output) const
+    void serialize(ref OutputStream output) const
     {
-        const(ubyte)[] content;
-        content.writeVar!int(ct_packetType);
-        content.write!int(m_x);
-        content.write!int(m_z);
-        content.writeNbt(m_heightMaps);
+        output.write!int(m_x);
+        output.write!int(m_z);
+        output.writeNbt(m_heightMaps);
         {
-            const(ubyte)[] chunkData;
+            OutputStream chunkData;
             foreach (ref sc; m_subChunks)
                 sc.serialize(chunkData);
-            content.writeVar!int(chunkData.length.to!int); // subChunks array byte length prefix
-            content.writeBytes(chunkData); // subChunks array
+            output.writeVar!int(chunkData.data.length.to!int); // subChunks array byte length prefix
+            output.writeBytes(chunkData.data); // subChunks array
         }
-        content.writeVar!int(0); // Empty blockEntities array
+        output.writeVar!int(0); // Empty blockEntities array
 
-        content.writeVar!int(0); // Number of following ulongs that encode the bit array
+        output.writeVar!int(0); // Number of following ulongs that encode the bit array
         // content.write!ulong(0b0_0000_0); // subChunkHasSkyLightDataMask
-        content.writeVar!int(0);
+        output.writeVar!int(0);
         // content.write!ulong(0b0_0000_0); // subChunkHasBlockLightDataMask
-        content.writeVar!int(0);
+        output.writeVar!int(0);
         // content.write!ulong(0b0_0000_0); // subChunkSkyLightDataAllZeroMask
-        content.writeVar!int(0);
+        output.writeVar!int(0);
         // content.write!ulong(0b0_0000_0); // subChunkBlockLightDataAllZeroMask
-        content.writeVar!int(0); // Empty skyLightData array
-        content.writeVar!int(0); // Empty blockLightData array
-
-        output.writeVar!int(content.length.to!int);
-        output.writeBytes(content);
+        output.writeVar!int(0); // Empty skyLightData array
+        output.writeVar!int(0); // Empty blockLightData array
     }
 }
