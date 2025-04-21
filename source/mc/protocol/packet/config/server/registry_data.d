@@ -3,7 +3,7 @@ module mc.protocol.packet.config.server.registry_data;
 import std.algorithm : move;
 
 import mc.protocol.nbt : Nbt;
-import mc.protocol.packet.config.server : PacketType;
+import mc.protocol.packet.config.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -14,7 +14,7 @@ class RegistryDataPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.registryData;
+    enum Protocol ct_protocol = Protocol.registryData;
 
     private string m_registryId;
     private Nbt[string] m_entries;

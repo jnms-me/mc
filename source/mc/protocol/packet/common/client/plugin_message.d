@@ -1,17 +1,16 @@
 module mc.protocol.packet.common.client.plugin_message;
 
-import mc.protocol.packet.config.client : PacketType;
-import mc.protocol.packet.traits : isClientPacket;
-import mc.protocol.stream : InputStream;
-
 @safe:
 
-final
-class PluginMessagePacket
+mixin template CommonPluginMessagePacket(Protocol)
+if (is(Protocol baseType == enum) && is(baseType == int))
 {
+    import mc.protocol.packet.traits : isClientPacket;
+    import mc.protocol.stream : InputStream;
+
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.pluginMessage;
+    enum Protocol ct_protocol = Protocol.pluginMessage;
 
     private string m_channel;
     private const(ubyte)[] m_data;

@@ -1,6 +1,6 @@
 module mc.protocol.packet.status.client.ping_request;
 
-import mc.protocol.packet.status.client : PacketType;
+import mc.protocol.packet.status.client : Protocol;
 import mc.protocol.packet.traits : isClientPacket;
 import mc.protocol.stream : InputStream;
 
@@ -11,7 +11,7 @@ class PingRequestPacket
 {
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.pingRequest;
+    enum Protocol ct_protocol = Protocol.pingRequest;
 
     private ulong m_payload;
 

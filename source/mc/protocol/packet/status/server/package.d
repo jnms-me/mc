@@ -5,7 +5,7 @@ public import mc.protocol.packet.status.server.status_response : StatusResponseP
 
 @safe:
 
-enum PacketType : int
+enum Protocol : int
 {
     statusResponse = 0x00,
     pongResponse   = 0x01,

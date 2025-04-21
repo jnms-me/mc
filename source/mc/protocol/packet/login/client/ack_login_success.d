@@ -1,6 +1,6 @@
 module mc.protocol.packet.login.client.ack_login_success;
 
-import mc.protocol.packet.login.client : PacketType;
+import mc.protocol.packet.login.client : Protocol;
 import mc.protocol.packet.traits : isClientPacket;
 import mc.protocol.stream : InputStream;
 
@@ -11,7 +11,7 @@ class AckLoginSuccessPacket
 {
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.ackLoginSuccess;
+    enum Protocol ct_protocol = Protocol.ackLoginSuccess;
 
     private
     this()

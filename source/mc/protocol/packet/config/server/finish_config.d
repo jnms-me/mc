@@ -1,6 +1,6 @@
 module mc.protocol.packet.config.server.finish_config;
 
-import mc.protocol.packet.config.server : PacketType;
+import mc.protocol.packet.config.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -11,7 +11,7 @@ class FinishConfigPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.finishConfig;
+    enum Protocol ct_protocol = Protocol.finishConfig;
 
     this()
     {

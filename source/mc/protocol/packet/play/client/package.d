@@ -2,7 +2,7 @@ module mc.protocol.packet.play.client;
 
 @safe:
 
-enum PacketType : int
+enum Protocol : int
 {
     confirmTeleportation         = 0X00,
     queryBlockEntityTag          = 0X01,

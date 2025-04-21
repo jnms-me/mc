@@ -8,7 +8,7 @@ public import mc.protocol.packet.play.server.set_center_chunk : SetCenterChunkPa
 
 @safe:
 
-enum PacketType : int
+enum Protocol : int
 {
     chunkBatchFinished = 0x0C,
     chunkBatchStart    = 0x0D,

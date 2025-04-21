@@ -5,8 +5,8 @@ public import mc.protocol.packet.config.server.registry_data : RegistryDataPacke
 
 @safe:
 
-enum PacketType : int
+enum Protocol : int
 {
-    finishConfig = 0x03,
-    registryData = 0x07,
+    @FinishConfigPacket finishConfig = 0x03,
+    @RegistryDataPacket registryData = 0x07,
 }

@@ -1,17 +1,17 @@
 module mc.protocol.packet.common.client.client_info;
 
-import mc.protocol.packet.config.client : PacketType;
-import mc.protocol.packet.traits : isClientPacket;
-import mc.protocol.stream : InputStream;
-
 @safe:
 
 final
-class ClientInfoPacket
+mixin template CommonClientInfoPacket(Protocol)
+if (is(Protocol baseType == enum) && is(baseType == int))
 {
+    import mc.protocol.packet.traits : isClientPacket;
+    import mc.protocol.stream : InputStream;
+
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.pluginMessage;
+    enum Protocol ct_protocol = Protocol.pluginMessage;
 
     private string m_locale;
     private ubyte m_renderDistance;
@@ -60,15 +60,15 @@ class ClientInfoPacket
     {
         typeof(this) instance = new typeof(this);
 
-        instance.m_locale              = input.readPrefixedString;
-        instance.m_renderDistance      = input.read!ubyte;
-        instance.m_chatMode            = input.readVar!int;
-        instance.m_chatColors          = input.read!bool;
-        instance.m_displayedSkinParts  = input.read!ubyte;
-        instance.m_mainHand            = input.readVar!int;
-        instance.m_textFiltering       = input.read!bool;
+        instance.m_locale = input.readPrefixedString;
+        instance.m_renderDistance = input.read!ubyte;
+        instance.m_chatMode = input.readVar!int;
+        instance.m_chatColors = input.read!bool;
+        instance.m_displayedSkinParts = input.read!ubyte;
+        instance.m_mainHand = input.readVar!int;
+        instance.m_textFiltering = input.read!bool;
         instance.m_showInOnlinePlayers = input.read!bool;
-        instance.m_particleLevel       = input.readVar!int;
+        instance.m_particleLevel = input.readVar!int;
 
         return instance;
     }

@@ -1,6 +1,6 @@
 module mc.protocol.packet.config.client.ack_finish_config;
 
-import mc.protocol.packet.config.client : PacketType;
+import mc.protocol.packet.config.client : Protocol;
 import mc.protocol.packet.traits : isClientPacket;
 import mc.protocol.stream : InputStream;
 
@@ -11,7 +11,7 @@ class AckFinishConfigPacket
 {
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.ackFinishConfig;
+    enum Protocol ct_protocol = Protocol.ackFinishConfig;
 
     private
     this()

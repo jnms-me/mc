@@ -2,7 +2,7 @@ module mc.protocol.packet.login.server.login_success;
 
 import std.uuid : UUID;
 
-import mc.protocol.packet.login.server : PacketType;
+import mc.protocol.packet.login.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -13,7 +13,7 @@ class LoginSuccessPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.loginSuccess;
+    enum Protocol ct_protocol = Protocol.loginSuccess;
 
     private UUID m_uuid;
     private string m_username;

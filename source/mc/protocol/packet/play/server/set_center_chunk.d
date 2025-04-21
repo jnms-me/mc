@@ -1,6 +1,6 @@
 module mc.protocol.packet.play.server.set_center_chunk;
 
-import mc.protocol.packet.play.server : PacketType;
+import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -11,7 +11,7 @@ class SetCenterChunkPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.setCenterChunk;
+    enum Protocol ct_protocol = Protocol.setCenterChunk;
 
     private int m_x;
     private int m_z;

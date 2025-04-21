@@ -5,7 +5,7 @@ import std.conv : to;
 import std.uuid : UUID;
 
 import mc.protocol.enums : GameMode;
-import mc.protocol.packet.play.server : PacketType;
+import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -16,7 +16,7 @@ class LoginPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.login;
+    enum Protocol ct_protocol = Protocol.login;
 
     private int m_entityId;
     private bool m_isHardCore;

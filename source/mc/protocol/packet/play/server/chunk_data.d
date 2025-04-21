@@ -4,7 +4,7 @@ import std.algorithm : each, move;
 import std.conv : to;
 
 import mc.protocol.nbt : Nbt;
-import mc.protocol.packet.play.server : PacketType;
+import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 import mc.protocol.sub_chunk : SubChunk;
@@ -16,7 +16,7 @@ class ChunkDataPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.chunkData;
+    enum Protocol ct_protocol = Protocol.chunkData;
 
     private int m_x;
     private int m_z;

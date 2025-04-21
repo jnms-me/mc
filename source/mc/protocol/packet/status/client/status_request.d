@@ -1,6 +1,6 @@
 module mc.protocol.packet.status.client.status_request;
 
-import mc.protocol.packet.status.client : PacketType;
+import mc.protocol.packet.status.client : Protocol;
 import mc.protocol.packet.traits : isClientPacket;
 import mc.protocol.stream : InputStream;
 
@@ -11,7 +11,7 @@ class StatusRequestPacket
 {
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.statusRequest;
+    enum Protocol ct_protocol = Protocol.statusRequest;
 
     private
     this()

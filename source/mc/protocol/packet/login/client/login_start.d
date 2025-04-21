@@ -2,7 +2,7 @@ module mc.protocol.packet.login.client.login_start;
 
 import std.uuid : UUID;
 
-import mc.protocol.packet.login.client : PacketType;
+import mc.protocol.packet.login.client : Protocol;
 import mc.protocol.packet.traits : isClientPacket;
 import mc.protocol.stream : InputStream;
 
@@ -13,7 +13,7 @@ class LoginStartPacket
 {
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.loginStart;
+    enum Protocol ct_protocol = Protocol.loginStart;
 
     private string m_userName;
     private UUID m_uuid;

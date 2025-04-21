@@ -1,6 +1,6 @@
 module mc.protocol.packet.play.server.chunk_batch_finished;
 
-import mc.protocol.packet.play.server : PacketType;
+import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -11,7 +11,7 @@ class ChunkBatchFinishedPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.chunkBatchFinished;
+    enum Protocol ct_protocol = Protocol.chunkBatchFinished;
 
     private int m_batchSize;
 

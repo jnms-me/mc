@@ -6,11 +6,11 @@ public import mc.protocol.packet.login.client.plugin_message : PluginMessagePack
 
 @safe:
 
-enum PacketType : int
+enum Protocol : int
 {
-    loginStart         = 0x00,
-    encryptionResponse = 0x01,
-    pluginMessage      = 0x02,
-    ackLoginSuccess    = 0x03,
-    cookieResponse     = 0x04,
+    @LoginStartPacket      loginStart         = 0x00,
+                           encryptionResponse = 0x01,
+    @PluginMessagePacket   pluginMessage      = 0x02,
+    @AckLoginSuccessPacket ackLoginSuccess    = 0x03,
+                           cookieResponse     = 0x04,
 }

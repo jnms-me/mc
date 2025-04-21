@@ -1,6 +1,6 @@
 module mc.protocol.packet.play.server.chunk_batch_start;
 
-import mc.protocol.packet.play.server : PacketType;
+import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -11,7 +11,7 @@ class ChunkBatchStartPacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.chunkBatchStart;
+    enum Protocol ct_protocol = Protocol.chunkBatchStart;
 
     this()
     {

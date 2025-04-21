@@ -1,6 +1,6 @@
 module mc.protocol.packet.status.server.pong_response;
 
-import mc.protocol.packet.status.server : PacketType;
+import mc.protocol.packet.status.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
@@ -11,7 +11,7 @@ class PongResponsePacket
 {
     static assert(isServerPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.pongResponse;
+    enum Protocol ct_protocol = Protocol.pongResponse;
 
     private ulong m_payload;
 

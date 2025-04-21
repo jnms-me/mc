@@ -4,8 +4,8 @@ public import mc.protocol.packet.handshake.client.handshake : HandshakePacket;
 
 @safe:
 
-enum PacketType : int
+enum Protocol : int
 {
-    handshake  = 0x00,
-    legacyPing = 0x7A,
+    @HandshakePacket handshake  = 0x00,
+                     legacyPing = 0x7A,
 }

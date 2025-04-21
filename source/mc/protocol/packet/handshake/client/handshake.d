@@ -1,6 +1,6 @@
 module mc.protocol.packet.handshake.client.handshake;
 
-import mc.protocol.packet.handshake.client : PacketType;
+import mc.protocol.packet.handshake.client : Protocol;
 import mc.protocol.packet.traits : isClientPacket;
 import mc.protocol.stream : InputStream;
 
@@ -11,7 +11,7 @@ class HandshakePacket
 {
     static assert(isClientPacket!(typeof(this)));
 
-    enum PacketType ct_packetType = PacketType.handshake;
+    enum Protocol ct_protocol = Protocol.handshake;
 
     private int m_protocolVersion;
     private string m_serverAddress;
