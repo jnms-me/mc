@@ -509,8 +509,8 @@ class Player
         lengthPrefixedOutput.writeVar!int(output.data.length.to!int);
         lengthPrefixedOutput.writeBytes(output.data);
 
-        // TODO: synchronize
-        m_outgoingPacketQueue ~= lengthPrefixedOutput;
+        synchronized (m_outgoingPacketQueueMutex)
+            m_outgoingPacketQueue ~= lengthPrefixedOutput;
     }
 
     private
@@ -524,7 +524,7 @@ class Player
         lengthPrefixedOutput.writeVar!int(output.data.length.to!int);
         lengthPrefixedOutput.writeBytes(output.data);
 
-        // TODO: synchronize
-        m_outgoingPacketQueue ~= lengthPrefixedOutput;
+        synchronized (m_outgoingPacketQueueMutex)
+            m_outgoingPacketQueue ~= lengthPrefixedOutput;
     }
 }
