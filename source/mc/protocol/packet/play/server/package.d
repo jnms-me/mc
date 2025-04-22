@@ -5,6 +5,7 @@ public import mc.protocol.packet.play.server.chunk_batch_start : ChunkBatchStart
 public import mc.protocol.packet.play.server.chunk_data : ChunkDataPacket;
 public import mc.protocol.packet.play.server.login : LoginPacket;
 public import mc.protocol.packet.play.server.set_center_chunk : SetCenterChunkPacket;
+public import mc.protocol.packet.play.server.update_time : UpdateTimePacket;
 
 @safe:
 
@@ -16,4 +17,5 @@ enum Protocol : int
     chunkData          = 0x28,
     login              = 0x2C,
     setCenterChunk     = 0x58,
+    updateTime         = 0x6A,
 }
