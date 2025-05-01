@@ -1,11 +1,14 @@
 module mc.main;
 
+import std.conv : to;
+
 import vibe.core.core : runEventLoopOnce;
 import vibe.core.net : listenTCP, TCPConnection, TCPListenOptions;
 
 import mc.config : Config;
 import mc.log : Logger;
 import mc.player : Player;
+import mc.data : McData, McVersion;
 
 @safe:
 
@@ -13,6 +16,8 @@ immutable log = Logger.moduleLogger;
 
 void main()
 {
+    // log.info!"%(%s\n%)"(McData.instance.getData(McVersion("pc", "1.21.4"), "blocks").arrayNoRef[0..4]);
+
     const ushort port = Config.ct_listenPort;
     const TCPListenOptions options = Config.ct_listenOptions;
     listenTCP(port, (conn) => handleConnection(conn), options);
