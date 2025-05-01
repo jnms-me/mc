@@ -54,10 +54,14 @@ const:
         {
             try
             {
+                // TODO: split writing and formatting to differentiate lazy args eval exceptions from log exceptions
                 try
                     writefln!(level.fmt)(f!"%s: %s"(m_id, f!fmt(args)));
                 catch (Exception e)
+                {
                     writefln!"Writing log failed with exception %s"(typeid(e));
+                    debug writefln!"Trace: %s"(e.toString);
+                }
             }
             catch (Exception e)
             {
