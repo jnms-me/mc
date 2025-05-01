@@ -11,7 +11,7 @@ if (is(Protocol baseType == enum) && is(baseType == int))
 
     static assert(isClientPacket!(typeof(this)));
 
-    enum Protocol ct_protocol = Protocol.pluginMessage;
+    enum Protocol ct_protocol = Protocol.clientInfo;
 
     private string m_locale;
     private ubyte m_renderDistance;

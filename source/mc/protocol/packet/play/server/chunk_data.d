@@ -7,7 +7,7 @@ import mc.protocol.nbt : Nbt;
 import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
-import mc.protocol.sub_chunk : SubChunk;
+import mc.protocol.chunk : Chunk;
 
 @safe:
 
@@ -21,14 +21,14 @@ class ChunkDataPacket
     private int m_x;
     private int m_z;
     private Nbt m_heightMaps;
-    private const(SubChunk)[] m_subChunks;
+    private const(Chunk)[] m_chunks;
 
-    this(int x, int z, ref Nbt heightMaps, const(SubChunk)[] subChunks)
+    this(int x, int z, ref Nbt heightMaps, const(Chunk)[] chunks)
     {
         m_x = x;
         m_z = z;
         m_heightMaps = heightMaps.move;
-        m_subChunks = subChunks;
+        m_chunks = chunks;
     }
 
     void serialize(ref OutputStream output) const
@@ -38,21 +38,21 @@ class ChunkDataPacket
         output.writeNbt(m_heightMaps);
         {
             OutputStream chunkData;
-            foreach (ref sc; m_subChunks)
+            foreach (ref sc; m_chunks)
                 sc.serialize(chunkData);
-            output.writeVar!int(chunkData.data.length.to!int); // subChunks array byte length prefix
-            output.writeBytes(chunkData.data); // subChunks array
+            output.writeVar!int(chunkData.data.length.to!int); // chunks array byte length prefix
+            output.writeBytes(chunkData.data); // chunks array
         }
         output.writeVar!int(0); // Empty blockEntities array
 
         output.writeVar!int(0); // Number of following ulongs that encode the bit array
-        // content.write!ulong(0b0_0000_0); // subChunkHasSkyLightDataMask
+        // content.write!ulong(0b0_0000_0); // chunkHasSkyLightDataMask
         output.writeVar!int(0);
-        // content.write!ulong(0b0_0000_0); // subChunkHasBlockLightDataMask
+        // content.write!ulong(0b0_0000_0); // chunkHasBlockLightDataMask
         output.writeVar!int(0);
-        // content.write!ulong(0b0_0000_0); // subChunkSkyLightDataAllZeroMask
+        // content.write!ulong(0b0_0000_0); // chunkSkyLightDataAllZeroMask
         output.writeVar!int(0);
-        // content.write!ulong(0b0_0000_0); // subChunkBlockLightDataAllZeroMask
+        // content.write!ulong(0b0_0000_0); // chunkBlockLightDataAllZeroMask
         output.writeVar!int(0); // Empty skyLightData array
         output.writeVar!int(0); // Empty blockLightData array
     }

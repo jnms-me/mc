@@ -48,8 +48,8 @@ class LoginPacket
             "minecraft:the_end"
         ];
         m_maxPlayers = 20;
-        m_viewDistance = 10;
-        m_simulationDistance = 10;
+        m_viewDistance = 15;
+        m_simulationDistance = 15;
         m_reducedDebugInfo = false;
         m_enableRespawnScreen = true;
         m_limitedCrafting = false;
@@ -61,7 +61,7 @@ class LoginPacket
         m_isDebugWorld = false;
         m_isSuperflatWorld = false;
         m_portalCooldownTicks = 0;
-        m_seaLevel = 63;
+        m_seaLevel = 0;
         m_enforcesSecureChat = false;
     }
 

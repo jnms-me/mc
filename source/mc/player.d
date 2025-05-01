@@ -1,6 +1,7 @@
 module mc.player;
 
 import core.atomic : atomicStore;
+import core.time : seconds;
 
 import std.algorithm : map;
 import std.conv : hexString, to;
@@ -12,18 +13,17 @@ import std.uuid : UUID;
 
 import eventcore.core : IOMode;
 
-import vibe.core.core : runTask, yield;
+import vibe.core.core : runTask, sleep, yield;
 import vibe.core.net : NetworkAddress, TCPConnection;
 import vibe.core.task : InterruptException, Task;
 
 import mc.config : Config;
 import mc.log : Logger;
-import mc.protocol.enums : GameMode;
+import mc.protocol.enums : GameEvent, GameMode, State;
 import mc.protocol.nbt : Nbt;
 import mc.protocol.packet.traits : getPacketImplForProtocolMember, isClientPacket, isPacket, isServerPacket;
-import mc.protocol.state : State;
 import mc.protocol.stream : EOFException, InputStream, OutputStream;
-import mc.protocol.sub_chunk : SubChunk;
+import mc.protocol.chunk : Chunk;
 import mc.util.meta : getMember, members, stringof;
 import packets = mc.protocol.packet.packets;
 
@@ -36,31 +36,36 @@ Player[] players;
 final
 class Player
 {
-    private Logger m_log;
+private:
+    Logger m_log;
 
-    private NetworkAddress m_remoteAddress;
-    private State m_state;
-    private UUID m_uuid;
-    private string m_userName;
+    OutputStream[] m_outgoingPacketQueue;
+    Object m_outgoingPacketQueueMutex = new Object;
 
-    private OutputStream[] m_outgoingPacketQueue;
-    private Object m_outgoingPacketQueueMutex = new Object;
+    NetworkAddress m_remoteAddress;
+    State m_state;
+    UUID m_uuid;
+    string m_userName;
+    long m_keepAliveId;
 
     void rederiveLogger()
     {
         string prefix = "Player";
         if (!m_uuid.empty && m_userName.length)
-            prefix ~= f!" (%s) %s"(m_uuid, m_userName);
+            prefix ~= f!" %s"(m_userName);
         else if (m_remoteAddress != m_remoteAddress.init)
             prefix ~= f!" %s"(m_remoteAddress);
 
         m_log.atomicStore(log.derive(prefix));
     }
 
+    public
     void handleConnection(scope TCPConnection conn)
     {
         m_remoteAddress = conn.remoteAddress;
         rederiveLogger;
+
+        m_log.info!"Client connected";
         
         players ~= this;
 
@@ -73,7 +78,7 @@ class Player
         writer.interrupt;
     }
 
-    private nothrow
+    nothrow
     void readerTask(scope TCPConnection conn)
     {
         try
@@ -120,7 +125,7 @@ class Player
         m_log.info!"Client disconnected";
     }
 
-    private nothrow
+    nothrow
     void writerTask(scope TCPConnection conn)
     {
         try
@@ -143,7 +148,6 @@ class Player
             m_log.error!"Exception in writer task: %s"((() @trusted => e.toString)());
     }
 
-    private
     void handleRawPacket(InputStream input)
     {
         const int protocol = input.readVar!int;
@@ -153,14 +157,14 @@ class Player
 
         void warnUnimplementedProtocol(alias ct_protocol)()
         {
-           m_log.diag!"Dropping packet for unimplemented protocol %s in state %s"(
+            m_log.diag!"Dropping packet for unimplemented protocol %s in state %s"(
                 ct_protocol.stringof, m_state,
             );
         }
 
         void warnUnknownProtocol()
         {
-           m_log.diag!"Dropping packet for unknown protocol %02x in state %s"(
+            m_log.diag!"Dropping packet for unknown protocol %02x in state %s"(
                 protocol, m_state,
             );
         }
@@ -170,7 +174,7 @@ class Player
             static if (is(getPacketImplForProtocolMember!ct_protocol Packet))
             {
                 Packet packet = Packet.deserialize(input);
-                m_log.dbg!"Got a %s"(packet.stringof);
+                m_log.dbg!"Got a %s"(Packet.stringof);
                 handlePacket(packet);
             }
             else
@@ -212,7 +216,6 @@ class Player
         }
     }
 
-    private
     void handlePacket(packets.handshake.client.HandshakePacket packet)
     {
         m_log.dbg!"  protocolVersion = %s"(packet.getProtocolVersion);
@@ -222,21 +225,16 @@ class Player
         switchState(packet.getNextState.to!State);
     }
 
-    private
     void handlePacket(packets.status.client.StatusRequestPacket)
     {
-        m_log.dbg!"Sending status response";
         sendStatusResponse;
     }
 
-    private
     void handlePacket(packets.status.client.PingRequestPacket packet)
     {
-        m_log.dbg!"Sending pong response";
         sendPacket(new packets.status.server.PongResponsePacket(packet.getPayload));
     }
 
-    private
     void handlePacket(packets.login.client.LoginStartPacket packet)
     {
         m_log.diag!"  userName = %s"(packet.getUserName);
@@ -246,70 +244,86 @@ class Player
         m_uuid = packet.getUuid;
         rederiveLogger;
 
-        m_log.dbg!"Sending login success";
         sendPacket(new packets.login.server.LoginSuccessPacket(packet.getUuid, packet.getUserName));
     }
 
-    private
     void handlePacket(packets.login.client.AckLoginSuccessPacket)
     {
         switchState(State.config);
 
-        m_log.dbg!"Sending registry data";
         sendRegistryData;
-        m_log.dbg!"Sending finish config";
         sendPacket(new packets.config.server.FinishConfigPacket);
     }
 
-    private
     void handlePacket(packets.login.client.PluginMessagePacket packet)
     {
         m_log.dbg!"  channel = %s"(packet.getChannel);
         m_log.dbg!"  data = %s"(packet.getData);
     }
 
-    private
     void handlePacket(packets.config.client.ClientInfoPacket packet)
     {
         m_log.dbg!"  packet = %s"((() @trusted => packet.toString)());
     }
 
-    private
     void handlePacket(packets.config.client.PluginMessagePacket packet)
     {
         m_log.dbg!"  channel = %s"(packet.getChannel);
         m_log.dbg!"  data = %s"(packet.getData);
     }
 
-    private
     void handlePacket(packets.config.client.AckFinishConfigPacket)
     {
         switchState(State.play);
 
-        m_log.dbg!"Sending login to world";
         sendPacket(new packets.play.server.LoginPacket);
+        m_log.info!"Joined the world";
 
-        m_log.dbg!"abilities";
+        m_log.dbg!"Sending abilities";
         sendHexPacket(0x3a, hexString!("0f" ~ "3d4ccccd" ~ "3dcccccd"));
 
-        m_log.dbg!"entity_status";
+        m_log.dbg!"Sending player entity status";
         sendHexPacket(0x1f, hexString!("00000000" ~ "18")); // op level 0
 
-        m_log.dbg!"position";
-        sendHexPacket(0x42, hexString!"014021000000000000c04f8000000000004021000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+        sendPacket(new packets.play.server.SetPlayerPositionPacket(
+            (Config.ct_chunkXMax + 1 - Config.ct_chunkXMin) * 16 / 2,
+            (Config.ct_chunkYMin + 1) * 16,
+            (Config.ct_chunkZMax + 1 - Config.ct_chunkZMin) * 16 / 2,
+        ));
 
-        m_log.dbg!"Sending world time";
+        sendWorldTime;
 
-        m_log.dbg!"spawn_position";
+        m_log.dbg!"Sending default spawn position";
         sendHexPacket(0x5b, hexString!"0000020000008fc100000000");
 
-        m_log.dbg!"game_state_change";
-        sendHexPacket(0x23, hexString!("0d" ~ "00000000")); // Start waiting for chunks
-
         sendAllChunks;
+
+        log.dbg!"Sending keep alive";
+        sendPacket(new packets.play.server.KeepAlivePacket(m_keepAliveId));
     }
 
-    private
+    void handlePacket(packets.play.client.KeepAlivePacket packet)
+    {
+        if (m_keepAliveId != packet.getId)
+            log.warn!"Keep alive id mismatch: expected %d, got %d"(m_keepAliveId, packet.getId);
+
+        runTask({
+            try
+            {
+                sleep(5.seconds);
+                log.dbg!"Sending keep alive";
+                sendPacket(new packets.play.server.KeepAlivePacket(++m_keepAliveId));
+            }
+            catch (Exception e) {}
+        });
+    }
+
+    void handlePacket(packets.play.client.ClientTickEndPacket) {}
+    void handlePacket(packets.play.client.SetPlayerPositionPacket) {}
+    void handlePacket(packets.play.client.SetPlayerPositionRotationPacket) {}
+    void handlePacket(packets.play.client.SetPlayerRotationPacket) {}
+    void handlePacket(packets.play.client.PlayerInputPacket) {}
+
     void sendStatusResponse()
     in (m_state == State.status)
     {
@@ -334,10 +348,11 @@ class Player
         sendPacket(new packets.status.server.StatusResponsePacket(json));
     }
 
-    private
     void sendRegistryData()
     in (m_state == State.config)
     {
+        m_log.dbg!"Sending all registry data";
+
         m_log.dbg!"minecraft:painting_variant";
         {
             auto registryDataPacket = new packets.config.server.RegistryDataPacket("minecraft:painting_variant");
@@ -391,9 +406,9 @@ class Player
                     "bed_works": Nbt(byte(0)),
                     "respawn_anchor_works": Nbt(byte(0)),
                     "has_raids": Nbt(byte(0)),
-                    "logical_height": Nbt(int(384)),
-                    "min_y": Nbt(int(-64)),
-                    "height": Nbt(int(384)),
+                    "logical_height": Nbt(int(64)),
+                    "min_y": Nbt(int(0)),
+                    "height": Nbt(int(64)),
                     "infiniburn": Nbt("#minecraft:infiniburn_overworld.json"),
                     "effects": Nbt("minecraft:overworld"),
                 ]);
@@ -452,55 +467,63 @@ class Player
         }
     }
 
-    private
     void sendWorldTime()
     in (m_state == State.play)
     {
         sendPacket(new packets.play.server.UpdateTimePacket(0, 0, false));
     }
 
-    private
     void sendAllChunks()
     in (m_state == State.play)
     {
-        m_log.dbg!"Sending set center chunk";
-        sendPacket(new packets.play.server.SetCenterChunkPacket(0, 0));
+        sendPacket(new packets.play.server.SetCenterChunkPacket(
+            (Config.ct_chunkXMax + 1 - Config.ct_chunkXMin) / 2,
+            (Config.ct_chunkZMax + 1 - Config.ct_chunkZMin) / 2,
+        ));
 
-        m_log.dbg!"Sending chunk batch start";
+        m_log.dbg!"Sending wait for chunks game event";
+        sendPacket(new packets.play.server.GameEventPacket(GameEvent.waitForLevelChunks, 0));
+
         sendPacket(new packets.play.server.ChunkBatchStartPacket);
 
-        m_log.dbg!"Sending chunk data";
         int chunksSent;
-        foreach (int x; 0 .. 3)
-            foreach (int z; 0 .. 3)
+        foreach (int x; Config.ct_chunkXMin - 1 .. Config.ct_chunkXMax + 2)
+            foreach (int z; Config.ct_chunkZMin - 1 .. Config.ct_chunkZMax + 2)
             {
-                Nbt heightMaps = Nbt([
-                    "MOTION_BLOCKING": Nbt(new long[](37)),
-                    "WORLD_SURFACE": Nbt(new long[](37)),
-                ]);
-                const(SubChunk)[] subChunks;
-                foreach (y; 0 .. 24)
-                    subChunks ~= SubChunk.emptySubChunk;
-                sendPacket(new packets.play.server.ChunkDataPacket(x, z, heightMaps, subChunks));
+                Nbt heightMaps = Nbt.emptyCompound;
+                const(Chunk)[] chunks;
+                foreach (int y; Config.ct_chunkYMin .. Config.ct_chunkYMax + 1)
+                {
+                    if (Config.ct_chunkXMin <= x && x <= Config.ct_chunkXMax
+                        && Config.ct_chunkZMin <= z && z <= Config.ct_chunkZMax)
+                    {
+                        if (y == Config.ct_chunkYMin)
+                            chunks ~= Chunk.createFilled;
+                        else
+                            chunks ~= Chunk.createEmpty;
+                    }
+                    else
+                        chunks ~= Chunk.createEmpty;
+                }
+                sendPacket(new packets.play.server.ChunkDataPacket(x, z, heightMaps, chunks));
                 chunksSent++;
             }
         m_log.dbg!"Sent %d chunks"(chunksSent);
 
-        m_log.dbg!"Sending chunk batch finished";
         sendPacket(new packets.play.server.ChunkBatchFinishedPacket(chunksSent));
     }
 
-    private
     void switchState(const State state)
     {
         m_state = state;
         m_log.dbg!"Switched to state %s"(m_state);
     }
 
-    private
     void sendPacket(Packet)(const Packet packet)
     if (isServerPacket!Packet)
     {
+        m_log.dbg!"Sending a %s"(Packet.stringof);
+
         OutputStream output;
         output.writeVar!int(packet.ct_protocol);
         packet.serialize(output);
@@ -513,7 +536,6 @@ class Player
             m_outgoingPacketQueue ~= lengthPrefixedOutput;
     }
 
-    private
     void sendHexPacket(int protocol, string hexString)
     {
         OutputStream output;
