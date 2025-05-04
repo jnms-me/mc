@@ -1,11 +1,14 @@
 module mc.config;
 
 import vibe.core.net : TCPListenOptions;
-import mc.log;
+
+import mc.log : LogLevel;
 
 struct Config
 {
     enum LogLevel ct_logLevel = LogLevel.diagnostic;
+
+    enum string ct_mcDataRootPath = "./mc-data";
 
     enum ushort ct_listenPort = 25_565;
     enum TCPListenOptions ct_listenOptions = TCPListenOptions.defaults | TCPListenOptions.reusePort;

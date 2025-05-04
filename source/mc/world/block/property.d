@@ -2,11 +2,16 @@ module mc.world.block.property;
 
 import std.algorithm : countUntil;
 import std.conv : to;
-import std.exception : enforce;
+import std.exception : enforce, assumeWontThrow;
+import std.sumtype : SumType, tryMatch;
+
+// TODO: toString
+// TODO: better exceptions
+// TODO: Replace tryMatch with tryGet when ldc updates to frontend 2.111
 
 @safe:
 
-abstract
+abstract immutable
 class Property
 {
     private
@@ -15,45 +20,57 @@ class Property
     }
 
 scope:
-    this(string name)
+pure:
+    protected nothrow
+    this(const string name)
     {
         m_name = name;
     }
 
-const:
     nothrow
     string getName()
         => m_name;
 
     abstract nothrow
     uint valueCount();
+
+    abstract
+    uint valueToId(in PropertyValue value);
+
+    abstract
+    PropertyValue idToValue(const uint id);
 }
 
-final
+final immutable
 class BoolProperty : Property
 {
 scope:
-    this(string name)
+pure:
+    this(const string name)
     {
         super(name);
     }
 
-const:
     override nothrow
     uint valueCount()
         => 2;
     
-    uint valueToId(bool value)
-        => value.to!uint;
+    override
+    uint valueToId(in PropertyValue propertyValue)
+    {
+        const value = propertyValue.tryMatch!((const bool a) => a);
+        return value.to!uint;
+    }
 
-    bool idToValue(uint id)
+    override
+    PropertyValue idToValue(const uint id)
     {
         enforce(id < valueCount);
-        return id.to!bool;
+        return PropertyValue(id.to!bool);
     }
 }
 
-final
+final immutable
 class UIntProperty : Property
 {
     private
@@ -63,66 +80,70 @@ class UIntProperty : Property
     }
 
 scope:
-    this(string name, uint minValue, uint valueCount)
+pure:
+    this(const string name, const uint minValue, const uint valueCount)
     {
         super(name);
         m_minValue = minValue;
         m_valueCount = valueCount;
     }
 
-const:
     override nothrow
     uint valueCount()
         => m_valueCount;
 
-    uint valueToId(uint value)
+    override
+    uint valueToId(in PropertyValue propertyValue)
     {
-        enforce(m_minValue <= value && value < m_minValue + m_valueCount);
-        return m_minValue + value;
+        const uintValue = propertyValue.tryMatch!((const uint a) => a);
+        enforce(m_minValue <= uintValue && uintValue < m_minValue + m_valueCount);
+        return m_minValue + uintValue;
     }
 
-    uint idToValue(uint id)
+    override
+    PropertyValue idToValue(const uint id)
     {
         enforce(id < valueCount);
-        return m_minValue + id;
+        return PropertyValue(m_minValue + id);
     }
 }
 
-final
+final immutable
 class EnumProperty : Property
 {
     private
     {
-        string[] m_values;
+        const(string)[] m_values;
     }
 
 scope:
-    this(string name, string[] values)
+pure:
+    nothrow
+    this(const string name, const immutable(string)[] values)
     {
         super(name);
         m_values = values;
     }
 
-const:
     override nothrow
     uint valueCount()
-    {
-        try
-            assert(false);
-        catch (Exception e)
-            return m_values.length.to!uint;
-    }
+        => m_values.length.to!uint.assumeWontThrow;
 
-    uint valueToId(string value)
+    override
+    uint valueToId(in PropertyValue propertyValue)
     {
+        const value = propertyValue.tryMatch!((const string a) => a);
         size_t index = m_values.countUntil(value);
         enforce(index < valueCount);
         return index.to!uint;
     }
 
-    string idToValue(uint id)
+    override
+    PropertyValue idToValue(const uint id)
     {
         enforce(id < valueCount);
-        return m_values[id];
+        return PropertyValue(m_values[id]);
     }
 }
+
+alias PropertyValue = immutable SumType!(bool, uint, string);
