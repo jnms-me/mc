@@ -2,10 +2,10 @@ module mc.world.block.property;
 
 import std.algorithm : countUntil;
 import std.conv : to;
-import std.exception : enforce, assumeWontThrow;
+import std.exception : assumeWontThrow, enforce;
+import std.format : f = format;
 import std.sumtype : SumType, tryMatch;
 
-// TODO: toString
 // TODO: better exceptions
 // TODO: Replace tryMatch with tryGet when ldc updates to frontend 2.111
 
@@ -14,7 +14,7 @@ import std.sumtype : SumType, tryMatch;
 abstract immutable
 class Property
 {
-    private
+    protected
     {
         string m_name;
     }
@@ -39,6 +39,9 @@ pure:
 
     abstract
     PropertyValue idToValue(const uint id);
+
+    abstract
+    string toString();
 }
 
 final immutable
@@ -68,6 +71,10 @@ pure:
         enforce(id < valueCount);
         return PropertyValue(id.to!bool);
     }
+
+    override
+    string toString()
+        => f!`BoolProperty(name: "%s")`(m_name);
 }
 
 final immutable
@@ -106,6 +113,10 @@ pure:
         enforce(id < valueCount);
         return PropertyValue(m_minValue + id);
     }
+
+    override
+    string toString()
+        => f!`UIntProperty(name: "%s", range: %u .. %u)`(m_name, m_minValue, m_minValue + m_valueCount);
 }
 
 final immutable
@@ -144,6 +155,10 @@ pure:
         enforce(id < valueCount);
         return PropertyValue(m_values[id]);
     }
+
+    override
+    string toString()
+        => f!`EnumProperty(name: "%s", values: [%(%s, %)])`(m_name, m_values);
 }
 
 alias PropertyValue = immutable SumType!(bool, uint, string);

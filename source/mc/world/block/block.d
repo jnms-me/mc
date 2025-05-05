@@ -1,9 +1,8 @@
 module mc.world.block.block;
 
-import std.algorithm : map, reduce;
 import std.conv : to;
 import std.exception : enforce;
-import std.traits : Unqual;
+import std.format : f = format;
 
 import mc.world.block.property : Property, PropertyValue;
 
@@ -22,6 +21,7 @@ class Block
     }
 
 scope:
+pure:
     this(
         const string name,
         const uint globalStateIdOffset,
@@ -35,37 +35,34 @@ scope:
         m_defaultStateId = defaultStateId;
     }
 
-    pure nothrow
+    nothrow
     string getName()
         => m_name;
 
-    pure nothrow
+    nothrow
     uint getGlobalStateIdOffset()
         => m_globalStateIdOffset;
 
-    pure nothrow
+    nothrow
     Property[] getStateProperties()
         => m_stateProperties;
 
-    pure nothrow
+    nothrow
     uint getDefaultStateId()
         => m_defaultStateId;
 
-    pure
-    uint getStateId(in PropertyValue[] propertyValues)
+    uint getStateId(in PropertyValue[string] propertyValues)
     {
-        enforce(m_stateProperties.length == propertyValues.length);
-
-        uint possibleIds = 1;
         uint id;
-        foreach (const i, const ref value; propertyValues)
+        uint possibleIds = 1;
+        foreach (immutable ref property; m_stateProperties)
         {
-            Property property = m_stateProperties[i];
-            const valueId = property.valueToId(value);
-            id += valueId * possibleIds;
+            enforce(property.getName in propertyValues, f!`Missing value for %s`(property.toString));
+            PropertyValue value = propertyValues[property.getName];
+
+            id += property.valueToId(value) * possibleIds;
             possibleIds *= property.valueCount;
         }
-
         return id;
     }
 }

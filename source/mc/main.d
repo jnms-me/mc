@@ -38,7 +38,7 @@ void testBlocks()
 
     const McVersion mcVersion = McVersion("pc", "1.21.4");
     const BlockSet blocks = BlocksByVersion.instance[mcVersion];
-    const Block block = blocks.getBlock("wall_torch");
+    const Block block = blocks.getBlock("redstone_wall_torch");
 
     log.info!"name = %s"(block.getName);
     log.info!"globalOffsetId = %s"(block.getGlobalStateIdOffset);
@@ -47,8 +47,9 @@ void testBlocks()
     log.info!"stateProperties = %s"(block.getStateProperties.map!(a => a.getName));
     log.info!"stateProperties = %s"(block.getStateProperties.map!(a => a.valueCount));
 
-    PropertyValue[] values = [
-        PropertyValue("south"),
+    PropertyValue[string] values = [
+        "facing": PropertyValue("north"),
+        "true": PropertyValue(true),
     ];
     log.info!"%s"(block.getStateId(values));
 }
