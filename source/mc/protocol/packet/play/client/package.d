@@ -6,6 +6,7 @@ public import mc.protocol.packet.play.client.player_input : PlayerInputPacket;
 public import mc.protocol.packet.play.client.set_player_position : SetPlayerPositionPacket;
 public import mc.protocol.packet.play.client.set_player_position_rotation : SetPlayerPositionRotationPacket;
 public import mc.protocol.packet.play.client.set_player_rotation : SetPlayerRotationPacket;
+public import mc.protocol.packet.play.client.use_item_on : UseItemOnPacket;
 
 @safe:
 
@@ -71,6 +72,6 @@ enum Protocol : int
                                      updateSign                  = 0x39,
                                      swingArm                    = 0x3A,
                                      teleportToEntity            = 0x3B,
-                                     useItemOn                   = 0x3C,
+    @UseItemOnPacket                 useItemOn                   = 0x3C,
                                      useItem                     = 0x3D,
 }

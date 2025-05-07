@@ -62,7 +62,7 @@ pure:
     uint valueToId(in PropertyValue propertyValue)
     {
         const value = propertyValue.tryMatch!((const bool a) => a);
-        return value.to!uint;
+        return (!value).to!uint;
     }
 
     override

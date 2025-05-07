@@ -5,10 +5,12 @@ import std.conv : to;
 import std.exception : basicExceptionCtors, enforce;
 import std.format : f = format;
 import std.meta : AliasSeq;
-import std.traits : isIntegral, Unqual;
+import std.traits : CopyTypeQualifiers, isIntegral, Unqual, Unshared;
 
 import mc.protocol.nbt : Nbt;
 import mc.util.meta : staticAmong;
+
+// TODO: purity
 
 @safe:
 
@@ -122,11 +124,23 @@ struct OutputStream
         while (value);
     }
 
-    void writePrefixedString(const immutable(char)[] s)
+    void writeArray(T : E[], E)(in T arr)
     {
-        writeVar!int(s.length.to!int);
-        m_arr ~= cast(const immutable(ubyte)[]) s;
+        foreach (el; arr)
+        {
+            Unshared!E cpy = el;
+            write(cpy);
+        }
     }
+
+    void writePrefixedArray(T : E[], E)(in T arr)
+    {
+        writeVar!int(arr.length.to!int);
+        writeArray(arr);
+    }
+
+    void writePrefixedString(const immutable(char)[] s)
+        => writePrefixedArray(s);
 
     void writeNbt(ref const Nbt nbt)
     {

@@ -40,16 +40,12 @@ pure:
         => m_name;
 
     nothrow
-    uint getGlobalStateIdOffset()
-        => m_globalStateIdOffset;
-
-    nothrow
     Property[] getStateProperties()
         => m_stateProperties;
 
     nothrow
     uint getDefaultStateId()
-        => m_defaultStateId;
+        => m_globalStateIdOffset + m_defaultStateId;
 
     uint getStateId(in PropertyValue[string] propertyValues)
     {
@@ -63,6 +59,6 @@ pure:
             id += property.valueToId(value) * possibleIds;
             possibleIds *= property.valueCount;
         }
-        return id;
+        return m_globalStateIdOffset + id;
     }
 }

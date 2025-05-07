@@ -5,7 +5,10 @@ import std.conv : to;
 import std.math : round, sqrt;
 import std.traits : isFloatingPoint, isIntegral, isNumeric, Unqual;
 
+import mc.protocol.chunk.chunk : ct_chunkBlockLength;
 import mc.util.meta : staticAmong;
+
+@safe:
 
 struct Vec3(T)
 if (isNumeric!T)
@@ -34,8 +37,8 @@ if (isNumeric!T)
     alias array this;
 
     ref inout(T) x() inout => m_arr[0];
-    ref inout(T) z() inout => m_arr[1];
-    ref inout(T) y() inout => m_arr[2];
+    ref inout(T) y() inout => m_arr[1];
+    ref inout(T) z() inout => m_arr[2];
 
     T length() const
     {
@@ -80,8 +83,15 @@ struct ChunkPos
         m_vector = vector;
     }
 
+    this(int x, int y, int z)
+    {
+        m_vector = Vec3!int(x, y, z);
+    }
+
     ref vector() inout
         => m_vector;
+
+    alias vector this;
 }
 
 struct BlockPos
@@ -128,6 +138,8 @@ struct BlockPos
         }
         return chunkRelativePos;
     }
+
+    alias vector this;
 }
 
 struct ChunkRelativeBlockPos
@@ -166,4 +178,9 @@ struct ChunkRelativeBlockPos
             if (el < 0)
                 el += 16;
     }
+
+    size_t toIndex() const
+        => x + (z * ct_chunkBlockLength) + (y * ct_chunkBlockLength ^^ 2);
+    
+    alias vector this;
 }
