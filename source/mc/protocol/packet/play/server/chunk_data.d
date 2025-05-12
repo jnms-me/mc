@@ -7,7 +7,7 @@ import mc.protocol.nbt : Nbt;
 import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
-import mc.protocol.chunk.chunk : Chunk;
+import mc.world.chunk.chunk : Chunk;
 
 @safe:
 

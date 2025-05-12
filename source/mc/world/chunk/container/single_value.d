@@ -1,6 +1,6 @@
-module mc.protocol.chunk.container.single_value;
+module mc.world.chunk.container.single_value;
 
-import mc.protocol.chunk.container.base : Container;
+import mc.world.chunk.container.base : Container;
 import mc.protocol.stream : OutputStream;
 
 @safe:

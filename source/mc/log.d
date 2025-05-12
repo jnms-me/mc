@@ -1,10 +1,10 @@
 module mc.log;
 
+import mc.config : Config;
+import mc.util.ansi_color : AnsiColor;
 import std.algorithm : map;
-import std.stdio : writef, writefln;
 import std.format : f = format;
-import mc.config;
-import mc.ansi_color : AnsiColor;
+import std.stdio : writef, writefln;
 
 @safe nothrow:
 

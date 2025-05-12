@@ -1,8 +1,8 @@
-module mc.protocol.chunk.container.paletted;
+module mc.world.chunk.container.paletted;
 
 import std.range.primitives : ElementType, isInputRange;
 
-import mc.protocol.chunk.container.base : Container;
+import mc.world.chunk.container.base : Container;
 import mc.protocol.stream : OutputStream;
 
 @safe:

@@ -32,7 +32,7 @@ shared static this()
     import mc.data.blocks : BlocksByVersion, BlockSet;
     import mc.data.mc_version : McVersion;
     import mc.log : Logger;
-    import mc.protocol.chunk.chunk : Chunk;
+    import mc.world.chunk.chunk : Chunk;
     import mc.world.block.block : Block;
     import mc.world.block.block_state : BlockState;
     import mc.world.block.property : PropertyValue;

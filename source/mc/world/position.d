@@ -5,7 +5,7 @@ import std.conv : to;
 import std.math : round, sqrt;
 import std.traits : isFloatingPoint, isIntegral, isNumeric, Unqual;
 
-import mc.protocol.chunk.chunk : ct_chunkBlockLength;
+import mc.world.chunk.chunk : ct_chunkBlockLength;
 import mc.util.meta : staticAmong;
 
 @safe:

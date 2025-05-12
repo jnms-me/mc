@@ -22,7 +22,7 @@ import mc.data.mc_version : McVersion;
 import mc.log : Logger;
 import mc.player.player_info : PlayerInfo;
 import mc.player.players : g_players;
-import mc.protocol.chunk.chunk : Chunk;
+import mc.world.chunk.chunk : Chunk;
 import mc.protocol.enums : GameEvent, State;
 import mc.protocol.nbt : Nbt;
 import mc.protocol.packet.traits : getPacketImplForProtocolMember, isServerPacket;

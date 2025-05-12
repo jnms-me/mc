@@ -1,4 +1,4 @@
-module mc.protocol.chunk.container.base;
+module mc.world.chunk.container.base;
 
 import mc.protocol.stream : OutputStream;
 

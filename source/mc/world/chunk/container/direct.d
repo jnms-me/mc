@@ -1,10 +1,10 @@
-module mc.protocol.chunk.container.direct;
+module mc.world.chunk.container.direct;
 
 import std.range.primitives : ElementType, isInputRange;
 import std.traits : Unconst;
 import std.typecons : Tuple, tuple;
 
-import mc.protocol.chunk.container.base : Container;
+import mc.world.chunk.container.base : Container;
 import mc.protocol.stream : OutputStream;
 import mc.util.math : ceilDiv;
 import mc.util.traits : bitSize;

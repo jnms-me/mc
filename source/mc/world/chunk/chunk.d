@@ -1,4 +1,4 @@
-module mc.protocol.chunk.chunk;
+module mc.world.chunk.chunk;
 
 import core.atomic : atomicOp;
 
@@ -11,9 +11,9 @@ import mc.util.traits : bitSize;
 import mc.world.block.block : Block;
 import mc.world.position : ChunkRelativeBlockPos;
 
-import mc.protocol.chunk.container.base : Container;
-import mc.protocol.chunk.container.direct : DirectContainer;
-import mc.protocol.chunk.container.single_value : SingleValueContainer;
+import mc.world.chunk.container.base : Container;
+import mc.world.chunk.container.direct : DirectContainer;
+import mc.world.chunk.container.single_value : SingleValueContainer;
 import mc.world.block.block_state : BlockState;
 
 @safe:

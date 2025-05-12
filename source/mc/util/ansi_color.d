@@ -1,4 +1,4 @@
-module mc.ansi_color;
+module mc.util.ansi_color;
 
 import std.algorithm : map;
 import std.array : join;

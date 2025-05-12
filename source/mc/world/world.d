@@ -1,6 +1,6 @@
 module mc.world.world;
 
-import mc.protocol.chunk.chunk : Chunk;
+import mc.world.chunk.chunk : Chunk;
 import mc.world.block.block : Block;
 import mc.world.block.block_state : BlockState;
 import mc.world.position : BlockPos, ChunkPos, ChunkRelativeBlockPos, Vec3;
