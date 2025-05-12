@@ -17,18 +17,20 @@ import vibe.core.net : NetworkAddress, TCPConnection;
 import vibe.core.task : InterruptException, Task;
 
 import mc.config : Config;
+import mc.data.blocks : BlocksByVersion, BlockSet;
+import mc.data.mc_version : McVersion;
 import mc.log : Logger;
 import mc.player.player_info : PlayerInfo;
 import mc.player.players : g_players;
 import mc.protocol.chunk.chunk : Chunk;
-import mc.protocol.enums : GameEvent, GameMode, State;
+import mc.protocol.enums : GameEvent, State;
 import mc.protocol.nbt : Nbt;
-import mc.protocol.packet.traits : getPacketImplForProtocolMember, isClientPacket, isPacket, isServerPacket;
+import mc.protocol.packet.traits : getPacketImplForProtocolMember, isServerPacket;
 import mc.protocol.stream : EOFException, InputStream, OutputStream;
-import mc.util.meta : getMember, members, stringof;
-import mc.world.position : BlockPos, ChunkPos, ChunkRelativeBlockPos, Vec3;
+import mc.world.block.property : PropertyValue;
+import mc.world.position : BlockPos, ChunkPos;
+import mc.world.world : g_world;
 import packets = mc.protocol.packet.packets;
-import mc.world.world;
 
 @safe:
 
@@ -306,20 +308,20 @@ private:
 
         sendAllChunks;
 
-        log.dbg!"Sending keep alive";
+        m_log.dbg!"Sending keep alive";
         sendPacket(new packets.play.server.KeepAlivePacket(m_keepAliveId));
     }
 
     void handlePacket(packets.play.client.KeepAlivePacket packet)
     {
         if (m_keepAliveId != packet.getId)
-            log.warn!"Keep alive id mismatch: expected %d, got %d"(m_keepAliveId, packet.getId);
+            m_log.warn!"Keep alive id mismatch: expected %d, got %d"(m_keepAliveId, packet.getId);
 
         runTask({
             try
             {
                 sleep(5.seconds);
-                log.dbg!"Sending keep alive";
+                m_log.dbg!"Sending keep alive";
                 sendPacket(new packets.play.server.KeepAlivePacket(++m_keepAliveId));
             }
             catch (Exception e) {}
@@ -328,26 +330,36 @@ private:
 
     void handlePacket(packets.play.client.UseItemOnPacket packet)
     {
-        log.diag!"useItemOnPacket: pos = %s"(packet.getPos);
+        m_log.diag!"useItemOnPacket: pos = %s"(packet.getPos);
 
         const leverPos = BlockPos(24, 16, 28);
         if (packet.getPos == leverPos)
         {
-            log.info!"lever hit";
+            m_log.info!"lever hit";
 
             import mc.config : onChangeLever;
 
-            const uint leverOn = 5793;
-            const uint leverOff = 5794;
-            if (g_world.getBlock(leverPos) == leverOn)
+            const BlockSet blocks = BlocksByVersion.instance[McVersion("pc", "1.21.4")];
+            const leverOff = blocks["lever"].getState([
+                "face": PropertyValue("floor"),
+                "facing": PropertyValue("south"),
+                "powered": PropertyValue(false),
+            ]);
+            const leverOn = blocks["lever"].getState([
+                "face": PropertyValue("floor"),
+                "facing": PropertyValue("south"),
+                "powered": PropertyValue(true),
+            ]);
+
+            if (g_world.getBlock(leverPos) == leverOn.getGlobalId)
             {
-                log.info!"lever is now off";
+                m_log.info!"lever is now off";
                 g_world.setBlock(leverPos, leverOff);
                 onChangeLever(false);
             }
             else
             {
-                log.info!"lever is now on";
+                m_log.info!"lever is now on";
                 g_world.setBlock(leverPos, leverOn);
                 onChangeLever(true);
             }
@@ -370,7 +382,7 @@ private:
                 "protocol": JSONValue(769),
             ]),
             "description": JSONValue([
-                "text": JSONValue("Vage 12ul minecraft"),
+                "text": JSONValue("Vage kelder minecraft server"),
             ]),
             "players": JSONValue([
                 "online": JSONValue(0),

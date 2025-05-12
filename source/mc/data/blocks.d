@@ -10,6 +10,7 @@ import std.exception : assumeUnique, enforce;
 import std.file : readText;
 import std.format : f = format;
 import std.json : JSONValue, parseJSON;
+import std.typecons : Tuple, tuple;
 
 import mc.data.mc_json_data : McJsonData;
 import mc.data.mc_version : McVersion;
@@ -53,9 +54,11 @@ class BlocksByVersion
             return;
         }
 
+        alias PropertyKey = Tuple!(string, "name", string, "type", uint, "valueCount");
+
         Block[] blocks;
         Property[] properties;
-        size_t[string] propertyIndexByName;
+        size_t[PropertyKey] propertyIndexByKey;
 
         Property propertyFromJson(const JSONValue propertyJson)
         {
@@ -63,9 +66,11 @@ class BlocksByVersion
 
             const name = obj["name"].get!string;
             const type = obj["type"].get!string;
+            const valueCount = obj["num_values"].get!uint;
+            const key = PropertyKey(name, type, valueCount);
 
-            if (name in propertyIndexByName)
-                return properties[propertyIndexByName[name]];
+            if (key in propertyIndexByKey)
+                return properties[propertyIndexByKey[key]];
 
             immutable property = delegate Property() {
                 switch (type)
@@ -73,11 +78,10 @@ class BlocksByVersion
                 case "bool":
                     return new BoolProperty(name);
                 case "int":
-                    immutable uint minValue = obj["values"][0].get!string.to!uint;
-                    immutable uint valueCount = obj["num_values"].get!uint;
+                    const minValue = obj["values"][0].get!string.to!uint;
                     return new UIntProperty(name, minValue, valueCount);
                 case "enum":
-                    immutable string[] values = obj["values"].arrayNoRef.map!(el => el.get!(immutable string)).array;
+                    const values = obj["values"].arrayNoRef.map!(el => el.get!(immutable string)).array;
                     return new EnumProperty(name, values);
                 default:
                     throw new Exception(f!`Unknown property type "%s"`(type));
@@ -86,7 +90,7 @@ class BlocksByVersion
 
             const index = properties.length;
             properties ~= property;
-            propertyIndexByName[name] = index;
+            propertyIndexByKey[key] = index;
 
             return property;
         }
@@ -132,14 +136,15 @@ class BlockSet
         Property[] m_properties;
 
         size_t[string] m_blockIndexByName;
-        size_t[string] m_propertyIndexByName;
+        // size_t[string] m_propertyIndexByName;
     }
 
 scope:
-    private
+pure:
+    private nothrow
     this(
-        Block[] blocks,
-        Property[] properties,
+        in Block[] blocks,
+        in Property[] properties,
     )
     {
         m_blocks = blocks;
@@ -153,13 +158,13 @@ scope:
             return (() @trusted => aa.assumeUnique)();
         }();
 
-        m_propertyIndexByName = {
-            size_t[string] aa;
-            foreach (const i, Property property; properties)
-                aa[property.getName] = i;
-            (() @trusted => aa.rehash)();
-            return (() @trusted => aa.assumeUnique)();
-        }();
+        // m_propertyIndexByName = {
+        //     size_t[string] aa;
+        //     foreach (const i, Property property; properties)
+        //         aa[property.getName] = i;
+        //     (() @trusted => aa.rehash)();
+        //     return (() @trusted => aa.assumeUnique)();
+        // }();
     }
 
     private
@@ -170,9 +175,11 @@ scope:
         return arr[*indexPtr];
     }
 
-    Block getBlock(const string name)
+    Block getBlock(in string name)
         => get(m_blocks, m_blockIndexByName, name);
 
-    Property getProperty(const string name)
-        => get(m_properties, m_propertyIndexByName, name);
+    // Property getProperty(in string name)
+    //     => get(m_properties, m_propertyIndexByName, name);
+
+    alias opIndex = getBlock;
 }

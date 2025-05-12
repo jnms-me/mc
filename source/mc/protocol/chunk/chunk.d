@@ -14,7 +14,7 @@ import mc.world.position : ChunkRelativeBlockPos;
 import mc.protocol.chunk.container.base : Container;
 import mc.protocol.chunk.container.direct : DirectContainer;
 import mc.protocol.chunk.container.single_value : SingleValueContainer;
-import mc.log;
+import mc.world.block.block_state : BlockState;
 
 @safe:
 
@@ -68,14 +68,15 @@ class Chunk
     }
 
     synchronized
-    void fillBlock(const uint blockId)
+    void fillBlock(in BlockState blockState)
     {
+        const id = blockState.getGlobalId;
         if (cast(SingleValueContainer) m_blocks)
-            m_blocks.to!SingleValueContainer.setValue(blockId);
+            m_blocks.to!SingleValueContainer.setValue(id);
         else
-            m_blocks = new SingleValueContainer(blockId);
+            m_blocks = new SingleValueContainer(id);
         
-        m_nonAirBlockCount = blockId == 0 ? 0 : ct_blocksPerChunk;
+        m_nonAirBlockCount = id == 0 ? 0 : ct_blocksPerChunk;
     }
 
     synchronized

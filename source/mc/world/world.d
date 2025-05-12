@@ -2,6 +2,7 @@ module mc.world.world;
 
 import mc.protocol.chunk.chunk : Chunk;
 import mc.world.block.block : Block;
+import mc.world.block.block_state : BlockState;
 import mc.world.position : BlockPos, ChunkPos, ChunkRelativeBlockPos, Vec3;
 
 @safe:
@@ -30,20 +31,21 @@ class World
     synchronized
     uint getBlock(in BlockPos blockPos)
     {
-        immutable chunkPos = blockPos.chunkPos;
-        immutable chunkRelativeBlockPos = blockPos.chunkRelativePos;
+        const chunkPos = blockPos.chunkPos;
+        const chunkRelativeBlockPos = blockPos.chunkRelativePos;
 
         ensureChunkExists(chunkPos);
         return m_chunks[chunkPos].getBlock(chunkRelativeBlockPos);
     }
 
     synchronized
-    void setBlock(in BlockPos blockPos, in uint blockId)
+    void setBlock(in BlockPos blockPos, in BlockState blockState)
     {
-        immutable chunkPos = blockPos.chunkPos;
-        immutable chunkRelativeBlockPos = blockPos.chunkRelativePos;
+        const chunkPos = blockPos.chunkPos;
+        const chunkRelativeBlockPos = blockPos.chunkRelativePos;
+        const id = blockState.getGlobalId;
 
         ensureChunkExists(chunkPos);
-        m_chunks[chunkPos].setBlock(chunkRelativeBlockPos, blockId);
+        m_chunks[chunkPos].setBlock(chunkRelativeBlockPos, id);
     }
 }

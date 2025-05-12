@@ -68,7 +68,7 @@ pure:
     override
     PropertyValue idToValue(const uint id)
     {
-        enforce(id < valueCount);
+        enforce(id < valueCount, f!`idToValue: id %u out of bounds for %s`(id, this));
         return PropertyValue(id.to!bool);
     }
 
@@ -103,14 +103,17 @@ pure:
     uint valueToId(in PropertyValue propertyValue)
     {
         const uintValue = propertyValue.tryMatch!((const uint a) => a);
-        enforce(m_minValue <= uintValue && uintValue < m_minValue + m_valueCount);
+        enforce(
+            m_minValue <= uintValue && uintValue < m_minValue + m_valueCount,
+            f!`valueToId: value %u out of bounds for %s`(uintValue, this),
+        );
         return m_minValue + uintValue;
     }
 
     override
     PropertyValue idToValue(const uint id)
     {
-        enforce(id < valueCount);
+        enforce(id < valueCount, f!`idToValue: id %u out of bounds for %s`(id, this));
         return PropertyValue(m_minValue + id);
     }
 
@@ -143,16 +146,19 @@ pure:
     override
     uint valueToId(in PropertyValue propertyValue)
     {
-        const value = propertyValue.tryMatch!((const string a) => a);
-        size_t index = m_values.countUntil(value);
-        enforce(index < valueCount);
+        const stringValue = propertyValue.tryMatch!((const string a) => a);
+        size_t index = m_values.countUntil(stringValue);
+        enforce(
+            index < valueCount,
+            f!`valueToId: invalid value "%s" for %s`(stringValue, this),
+        );
         return index.to!uint;
     }
 
     override
     PropertyValue idToValue(const uint id)
     {
-        enforce(id < valueCount);
+        enforce(id < valueCount, f!`idToValue: id %u out of bounds for %s`(id, this));
         return PropertyValue(m_values[id]);
     }
 
