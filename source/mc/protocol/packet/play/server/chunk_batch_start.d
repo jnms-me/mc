@@ -13,11 +13,15 @@ class ChunkBatchStartPacket
 
     enum Protocol ct_protocol = Protocol.chunkBatchStart;
 
+scope:
+pure:
+    nothrow @nogc
     this()
     {
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow @nogc
+    void serialize(scope ref OutputStream output) const
     {
     }
 }

@@ -31,8 +31,8 @@ class World
     synchronized
     uint getBlock(in BlockPos blockPos)
     {
-        const chunkPos = blockPos.chunkPos;
-        const chunkRelativeBlockPos = blockPos.chunkRelativePos;
+        const chunkPos = blockPos.toChunkPos;
+        const chunkRelativeBlockPos = blockPos.toChunkRelativePos;
 
         ensureChunkExists(chunkPos);
         return m_chunks[chunkPos].getBlock(chunkRelativeBlockPos);
@@ -41,8 +41,8 @@ class World
     synchronized
     void setBlock(in BlockPos blockPos, in BlockState blockState)
     {
-        const chunkPos = blockPos.chunkPos;
-        const chunkRelativeBlockPos = blockPos.chunkRelativePos;
+        const chunkPos = blockPos.toChunkPos;
+        const chunkRelativeBlockPos = blockPos.toChunkRelativePos;
         const id = blockState.getGlobalId;
 
         ensureChunkExists(chunkPos);

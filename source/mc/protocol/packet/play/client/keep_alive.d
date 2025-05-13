@@ -15,16 +15,19 @@ class KeepAlivePacket
 
     private long m_id;
 
-    private
+scope:
+pure:
+    private nothrow @nogc
     this()
     {
     }
 
+    nothrow @nogc
     long getId() const
         => m_id;
 
     static
-    typeof(this) deserialize(ref InputStream input)
+    typeof(this) deserialize(scope ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 

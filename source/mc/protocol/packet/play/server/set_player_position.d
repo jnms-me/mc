@@ -5,7 +5,7 @@ import mc.protocol.packet.play.server : Protocol;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 
-@safe nothrow:
+@safe:
 
 final
 class SetPlayerPositionPacket
@@ -14,17 +14,23 @@ class SetPlayerPositionPacket
 
     enum Protocol ct_protocol = Protocol.setPlayerPosition;
 
-    private int m_id;
-    private double m_x;
-    private double m_y;
-    private double m_z;
-    private double m_vx;
-    private double m_vy;
-    private double m_vz;
-    private float m_yaw;
-    private float m_pitch;
-    private uint m_flags;
+    private
+    {
+        int m_id;
+        double m_x;
+        double m_y;
+        double m_z;
+        double m_vx;
+        double m_vy;
+        double m_vz;
+        float m_yaw;
+        float m_pitch;
+        uint m_flags;
+    }
 
+scope:
+pure:
+    nothrow @nogc
     this(
         double x, double y, double z,
         double vx = 0.0, double vy = 0.0, double vz = 0.0,
@@ -44,7 +50,8 @@ class SetPlayerPositionPacket
         m_flags = flags;
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.writeVar!int(m_id);
         output.write!double(m_x);

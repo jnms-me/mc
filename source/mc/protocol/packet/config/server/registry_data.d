@@ -16,30 +16,39 @@ class RegistryDataPacket
 
     enum Protocol ct_protocol = Protocol.registryData;
 
-    private string m_registryId;
-    private Nbt[string] m_entries;
+    private
+    {
+        string m_registryId;
+        Nbt[string] m_entries;
+    }
 
-    this(string registryId)
+scope:
+pure:
+    nothrow @nogc
+    this(in string registryId)
     {
         m_registryId = registryId;
     }
 
-    void addEntry(string entryId, ref Nbt nbt)
+    nothrow
+    void addEntry(in string entryId, ref Nbt nbt)
     in (entryId !in m_entries)
     {
         m_entries[entryId] = nbt.move;
     }
 
+    nothrow
     void addEntry(string entryId)
     in (entryId !in m_entries)
     {
         m_entries[entryId] = Nbt.init;
     }
 
+    nothrow @nogc
     string getRegistryId() const
         => m_registryId;
 
-    void serialize(ref OutputStream output) const
+    void serialize(scope ref OutputStream output) const
     {
         output.writePrefixedString(m_registryId);
         output.writeVar!int(cast(int) m_entries.length); // Prefixed array length
@@ -49,7 +58,7 @@ class RegistryDataPacket
             const bool hasNbt = nbt != Nbt.init;
             output.write!bool(hasNbt); // Whether optional nbt is attached
             if (hasNbt)
-                output.writeNbt(nbt);
+                nbt.serialize(output);
         }
     }
 }

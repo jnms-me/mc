@@ -18,12 +18,18 @@ class ChunkDataPacket
 
     enum Protocol ct_protocol = Protocol.chunkData;
 
-    private int m_x;
-    private int m_z;
-    private Nbt m_heightMaps;
-    private const(Chunk)[] m_chunks;
+    private
+    {
+        int m_x;
+        int m_z;
+        Nbt m_heightMaps;
+        const(Chunk)[] m_chunks;
+    }
 
-    this(int x, int z, ref Nbt heightMaps, const(Chunk)[] chunks)
+scope:
+pure:
+    nothrow @nogc
+    this(in int x, in int z, ref Nbt heightMaps, in const(Chunk)[] chunks)
     {
         m_x = x;
         m_z = z;
@@ -31,15 +37,15 @@ class ChunkDataPacket
         m_chunks = chunks;
     }
 
-    void serialize(ref OutputStream output) const
+    void serialize(scope ref OutputStream output) const
     {
         output.write!int(m_x);
         output.write!int(m_z);
-        output.writeNbt(m_heightMaps);
+        m_heightMaps.serialize(output);
         {
             OutputStream chunkData;
-            foreach (ref sc; m_chunks)
-                sc.serialize(chunkData);
+            foreach (ref chunk; m_chunks)
+                chunk.serialize(chunkData);
             output.writeVar!int(chunkData.data.length.to!int); // chunks array byte length prefix
             output.writeBytes(chunkData.data); // chunks array
         }

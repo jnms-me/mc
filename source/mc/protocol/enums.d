@@ -1,6 +1,6 @@
 module mc.protocol.enums;
 
-@safe nothrow @nogc:
+@safe:
 
 enum State : int
 {

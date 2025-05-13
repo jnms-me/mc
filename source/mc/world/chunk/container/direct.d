@@ -22,6 +22,8 @@ class DirectContainer : Container
         ulong[] m_data;
     }
 
+scope:
+pure:
     invariant
     {
         assert(0 < m_valueCount);
@@ -29,6 +31,7 @@ class DirectContainer : Container
         assert(m_data.length);
     }
 
+    nothrow
     this(const uint valueCount, const ubyte bitsPerValue, const uint initialValue = 0)
     {
         m_valueCount = valueCount;
@@ -38,22 +41,23 @@ class DirectContainer : Container
     }
 
     /// Copy ctor
-    this(ref typeof(this) other)
+    nothrow
+    this(in typeof(this) other)
     {
         m_valueCount = other.m_valueCount;
         m_bitsPerValue = other.m_bitsPerValue;
         m_data = other.m_data.dup;
     }
 
-    private pure nothrow
+    private nothrow @nogc
     size_t valuesPerUlong() const
         => bitSize!ulong / m_bitsPerValue;
 
-    private pure nothrow
+    private nothrow @nogc
     size_t dataLength() const
         => m_valueCount.ceilDiv(valuesPerUlong);
     
-    private pure nothrow
+    private nothrow @nogc
     auto getValueLocation(const size_t i) const
     in (i < m_valueCount)
     {
@@ -64,14 +68,14 @@ class DirectContainer : Container
         return tuple!("index", "offset", "mask")(index, offset, mask);
     }
     
-    pure nothrow
+    nothrow @nogc
     uint opIndex(const size_t i) const
     {
         const loc = getValueLocation(i);
         return cast(uint) (m_data[loc.index] & loc.mask) >> loc.offset;
     }
 
-    synchronized
+    synchronized nothrow @nogc
     uint opIndexAssign(const uint value, const size_t i)
     {
         const loc = getValueLocation(i);
@@ -79,8 +83,8 @@ class DirectContainer : Container
         return cast(uint) (m_data[loc.index] = (m_data[loc.index] & ~loc.mask) | valueWithOffset);
     }
 
-    override
-    void serialize(ref OutputStream output) const
+    override nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.writeVar!uint(m_bitsPerValue);
         output.writePrefixedArray(m_data);

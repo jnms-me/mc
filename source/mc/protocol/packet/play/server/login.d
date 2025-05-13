@@ -2,6 +2,7 @@ module mc.protocol.packet.play.server.login;
 
 import std.algorithm : each;
 import std.conv : to;
+import std.exception : assumeWontThrow;
 import std.uuid : UUID;
 
 import mc.protocol.enums : GameMode;
@@ -18,26 +19,32 @@ class LoginPacket
 
     enum Protocol ct_protocol = Protocol.login;
 
-    private int m_entityId;
-    private bool m_isHardCore;
-    private string[] m_dimensionIds;
-    private int m_maxPlayers;
-    private int m_viewDistance;
-    private int m_simulationDistance;
-    private bool m_reducedDebugInfo;
-    private bool m_enableRespawnScreen;
-    private bool m_limitedCrafting;
-    private int m_dimensionType;
-    private string m_dimensionId;
-    private ubyte[8] m_seedHash;
-    private GameMode m_gameMode;
-    private GameMode m_lastGameMode;
-    private bool m_isDebugWorld;
-    private bool m_isSuperflatWorld;
-    private int m_portalCooldownTicks;
-    private int m_seaLevel;
-    private bool m_enforcesSecureChat;
+    private
+    {
+        int m_entityId;
+        bool m_isHardCore;
+        string[] m_dimensionIds;
+        int m_maxPlayers;
+        int m_viewDistance;
+        int m_simulationDistance;
+        bool m_reducedDebugInfo;
+        bool m_enableRespawnScreen;
+        bool m_limitedCrafting;
+        int m_dimensionType;
+        string m_dimensionId;
+        ubyte[8] m_seedHash;
+        GameMode m_gameMode;
+        GameMode m_lastGameMode;
+        bool m_isDebugWorld;
+        bool m_isSuperflatWorld;
+        int m_portalCooldownTicks;
+        int m_seaLevel;
+        bool m_enforcesSecureChat;
+    }
 
+scope:
+pure:
+    nothrow
     this()
     {
         m_entityId = 0;
@@ -65,11 +72,12 @@ class LoginPacket
         m_enforcesSecureChat = false;
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.write!int(m_entityId);
         output.write!bool(m_isHardCore);
-        output.writeVar!int(m_dimensionIds.length.to!int); // Prefixed array length
+        output.writeVar!int(m_dimensionIds.length.to!int.assumeWontThrow); // Prefixed array length
         m_dimensionIds.each!(s => output.writePrefixedString(s)); // Prefixed array contents
         output.writeVar!int(m_maxPlayers);
         output.writeVar!int(m_viewDistance);

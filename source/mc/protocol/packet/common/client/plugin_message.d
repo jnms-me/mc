@@ -12,22 +12,29 @@ if (is(Protocol baseType == enum) && is(baseType == int))
 
     enum Protocol ct_protocol = Protocol.pluginMessage;
 
-    private string m_channel;
-    private const(ubyte)[] m_data;
-
     private
+    {
+        string m_channel;
+        const(ubyte)[] m_data;
+    }
+
+scope:
+pure:
+    private nothrow @nogc
     this()
     {
     }
 
+    nothrow @nogc
     string getChannel() const
         => m_channel;
 
+    nothrow @nogc
     const(ubyte[]) getData() const
         => m_data;
 
     static
-    typeof(this) deserialize(ref InputStream input)
+    typeof(this) deserialize(scope ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 

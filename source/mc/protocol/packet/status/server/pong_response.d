@@ -13,17 +13,25 @@ class PongResponsePacket
 
     enum Protocol ct_protocol = Protocol.pongResponse;
 
-    private ulong m_payload;
+    private
+    {
+        ulong m_payload;
+    }
 
+scope:
+pure:
+    nothrow @nogc
     this(in ulong payload)
     {
         m_payload = payload;
     }
 
+    nothrow @nogc
     ulong getPayload() const
         => m_payload;
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.write!ulong(m_payload);
     }

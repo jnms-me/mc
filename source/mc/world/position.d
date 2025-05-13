@@ -2,73 +2,92 @@ module mc.world.position;
 
 import std.algorithm : all, map, sum;
 import std.conv : to;
-import std.math : round, sqrt;
+import std.exception : assumeWontThrow;
+import std.math : isFinite, round, sqrt;
 import std.traits : isFloatingPoint, isIntegral, isNumeric, Unqual;
 
-import mc.world.chunk.chunk : ct_chunkBlockLength;
 import mc.util.meta : staticAmong;
+import mc.world.chunk.chunk : ct_chunkBlockLength;
 
 @safe:
 
 struct Vec3(T)
 if (isNumeric!T)
 {
-    private
-    {
-        static if (isIntegral!T)
-            alias F = double; // Floating point type used for some calculations
-
-        T[3] m_arr = T(0);
-    }
+    static if (isIntegral!T)
+        private alias F = double; // Floating point type used for some calculations
 
     enum typeof(this) origin = typeof(this).init;
 
-    this(T[3] arr)
+    private
+    {
+        T[3] m_arr = T(0);
+    }
+
+pure:
+    scope
+    invariant
+    {
+        static if (isFloatingPoint!T)
+            assert(m_arr[].all!isFinite);
+    }
+
+    nothrow @nogc
+    this(in T[3] arr) scope
     {
         m_arr = arr;
     }
 
-    this(T x, T y, T z)
+    nothrow @nogc
+    this(in T x, in T y, in T z) scope
     {
         m_arr = [x, y, z];
     }
 
-    ref inout(T[3]) array() inout => m_arr;
-    alias array this;
+    nothrow @nogc
+    {
+        ref inout(T[3]) array() inout => m_arr;
 
-    ref inout(T) x() inout => m_arr[0];
-    ref inout(T) y() inout => m_arr[1];
-    ref inout(T) z() inout => m_arr[2];
+        ref inout(T) x() inout => m_arr[0];
+        ref inout(T) y() inout => m_arr[1];
+        ref inout(T) z() inout => m_arr[2];
+    }
 
-    T length() const
+    nothrow
+    T length() scope const
     {
         T sum = m_arr[].map!"a^^2".sum;
         static if (isFloatingPoint!T)
             return sum.sqrt;
         else
-            return sum.to!F.sqrt.round.to!T;
+            return sum.to!F.sqrt.round.to!T.assumeWontThrow;
     }
 
-    auto opUnary(string op)() const
+    nothrow @nogc
+    auto opUnary(string op)() scope const
     {
         Unqual!(typeof(this)) ret;
         ret.m_arr = mixin(op ~ "m_arr[]");
         return ret;
     }
 
-    auto opBinary(string op)(const T rhs) const
+    nothrow @nogc
+    auto opBinary(string op)(in T rhs) scope const
     {
-        Unqual!(typeof(this)) ret;
+        Vec3!T ret;
         ret.m_arr = mixin("m_arr[]" ~ op ~ "rhs");
         return ret;
     }
 
-    auto opBinary(string op)(const typeof(this) rhs) const
+    nothrow @nogc
+    auto opBinary(string op)(in Vec3!T rhs) scope const
     {
-        Unqual!(typeof(this)) ret;
+        Vec3!T ret;
         ret.m_arr = mixin("m_arr[]" ~ op ~ "rhs.m_arr[]");
         return ret;
     }
+
+    alias array this;
 }
 
 struct ChunkPos
@@ -78,18 +97,21 @@ struct ChunkPos
         Vec3!int m_vector;
     }
 
-    this(Vec3!int vector)
+pure:
+    nothrow @nogc
+    this(Vec3!int vector) scope
     {
         m_vector = vector;
     }
 
-    this(int x, int y, int z)
+    nothrow @nogc
+    this(int x, int y, int z) scope
     {
         m_vector = Vec3!int(x, y, z);
     }
 
-    ref vector() inout
-        => m_vector;
+    nothrow @nogc
+    ref vector() inout => m_vector;
 
     alias vector this;
 }
@@ -101,42 +123,47 @@ struct BlockPos
         Vec3!int m_vector;
     }
 
+pure:
+    nothrow @nogc
     this(Vec3!int vector)
     {
         m_vector = vector;
     }
 
+    nothrow @nogc
     this(int x, int y, int z)
     {
         m_vector = Vec3!int(x, y, z);
     }
 
-    ref vector() inout
-        => m_vector;
+    nothrow @nogc
+    ref vector() inout => m_vector;
 
-    ChunkPos chunkPos() scope const
+    nothrow @nogc
+    ChunkPos toChunkPos() scope const
     {
-        auto chunkPos = ChunkPos(m_vector);
-        foreach (ref int el; chunkPos.vector)
+        auto toChunkPos = ChunkPos(m_vector);
+        foreach (ref int el; toChunkPos.vector)
         {
             if (el >= 0)
                 el = el / 16;
             else
                 el = el / 16 - 1;
         }
-        return chunkPos;
+        return toChunkPos;
     }
 
-    ChunkRelativeBlockPos chunkRelativePos() scope const
+    nothrow @nogc
+    ChunkRelativeBlockPos toChunkRelativePos() scope const
     {
-        auto chunkRelativePos = ChunkRelativeBlockPos(m_vector);
-        foreach (ref int el; chunkRelativePos.vector)
+        auto toChunkRelativePos = ChunkRelativeBlockPos(m_vector);
+        foreach (ref int el; toChunkRelativePos.vector)
         {
             el %= 16;
             if (el < 0)
                 el += 16;
         }
-        return chunkRelativePos;
+        return toChunkRelativePos;
     }
 
     alias vector this;
@@ -149,29 +176,30 @@ struct ChunkRelativeBlockPos
         Vec3!int m_vector;
     }
 
+    scope
     invariant
     {
         assert(m_vector[].all!(el => el >= 0));
         assert(m_vector[].all!(el => el < 16));
     }
 
-    this(Vec3!int vector)
+pure:
+    nothrow @nogc
+    this(in Vec3!int vector) scope
     {
         m_vector = vector;
         wrapAround;
     }
 
-    this(int x, int y, int z)
+    nothrow @nogc
+    this(in int x, in int y, in int z) scope
     {
         m_vector = Vec3!int(x, y, z);
         wrapAround;
     }
 
-    ref vector() inout
-        => m_vector;
-
-    private
-    void wrapAround()
+    private nothrow @nogc
+    void wrapAround() scope
     {
         m_vector[] %= 16;
         foreach (ref int el; m_vector)
@@ -179,8 +207,46 @@ struct ChunkRelativeBlockPos
                 el += 16;
     }
 
-    size_t toIndex() const
+    nothrow @nogc
+    ref vector() inout => m_vector;
+
+    nothrow @nogc
+    size_t toIndex() scope const
         => x + (z * ct_chunkBlockLength) + (y * ct_chunkBlockLength ^^ 2);
     
+    alias vector this;
+}
+
+struct ContinuousPos
+{
+    private
+    {
+        Vec3!double m_vector;
+    }
+
+pure:
+    nothrow @nogc
+    this(Vec3!double vector) scope
+    {
+        m_vector = vector;
+    }
+
+    nothrow @nogc
+    this(double x, double y, double z) scope
+    {
+        m_vector = Vec3!double(x, y, z);
+    }
+
+    nothrow @nogc
+    ref vector() inout => m_vector;
+
+    nothrow
+    BlockPos toBlockPos() scope const
+        => BlockPos(
+            x.round.to!int.assumeWontThrow,
+            y.round.to!int.assumeWontThrow,
+            z.round.to!int.assumeWontThrow,
+        );
+
     alias vector this;
 }

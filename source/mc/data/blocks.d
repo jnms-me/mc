@@ -19,13 +19,13 @@ import mc.world.block.property : BoolProperty, EnumProperty, Property, UIntPrope
 
 @safe:
 
-shared
+final shared
 class BlocksByVersion
 {
     // Singleton
     private static BlocksByVersion g_instance = new BlocksByVersion;
-    private pure nothrow this()() scope {}
-    static nothrow BlocksByVersion instance() => g_instance;
+    private pure nothrow @nogc this()() scope {}
+    static nothrow @nogc BlocksByVersion instance() => g_instance;
 
     private
     {
@@ -36,15 +36,16 @@ class BlocksByVersion
         size_t[string] m_blockSetIndexByDataFilePath;
     }
 
+scope:
     private synchronized
-    void ensureMcVersionIsLoaded(const McVersion mcVersion) scope
+    void ensureMcVersionIsLoaded(const McVersion mcVersion)
     {
         if (mcVersion !in m_blockSetIndexByMcVersion)
             loadMcVersion(mcVersion);
     }
 
     private synchronized
-    void loadMcVersion(const McVersion mcVersion) scope
+    void loadMcVersion(const McVersion mcVersion)
     {
         const dataFilePath = McJsonData.instance.getDataFilePath(mcVersion, ct_dataType);
         if (dataFilePath in m_blockSetIndexByDataFilePath)
@@ -120,7 +121,7 @@ class BlocksByVersion
     }
 
     synchronized
-    ref BlockSet opIndex(const McVersion mcVersion) scope
+    ref BlockSet opIndex(const McVersion mcVersion)
     {
         ensureMcVersionIsLoaded(mcVersion);
         return m_blockSets[m_blockSetIndexByMcVersion[mcVersion]];
@@ -136,7 +137,6 @@ class BlockSet
         Property[] m_properties;
 
         size_t[string] m_blockIndexByName;
-        // size_t[string] m_propertyIndexByName;
     }
 
 scope:
@@ -157,29 +157,17 @@ pure:
             (() @trusted => aa.rehash)();
             return (() @trusted => aa.assumeUnique)();
         }();
-
-        // m_propertyIndexByName = {
-        //     size_t[string] aa;
-        //     foreach (const i, Property property; properties)
-        //         aa[property.getName] = i;
-        //     (() @trusted => aa.rehash)();
-        //     return (() @trusted => aa.assumeUnique)();
-        // }();
-    }
-
-    private
-    immutable(T) get(T, K)(in immutable(T)[] arr, in size_t[K] indexByKey, in K key)
-    {
-        const size_t* indexPtr = key in indexByKey;
-        enforce(indexPtr !is null, f!`Unknown %s "%s"`(T.stringof, key));
-        return arr[*indexPtr];
     }
 
     Block getBlock(in string name)
-        => get(m_blocks, m_blockIndexByName, name);
+    {
+        const size_t* indexPtr = name in m_blockIndexByName;
+        enforce(indexPtr !is null, f!`Unknown block "%s"`(name));
+        return m_blocks[*indexPtr];
+    }
 
-    // Property getProperty(in string name)
-    //     => get(m_properties, m_propertyIndexByName, name);
+    auto getBlockNames(in string name)
+        => m_blockIndexByName.keys;
 
     alias opIndex = getBlock;
 }

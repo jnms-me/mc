@@ -26,11 +26,14 @@ class UseItemOnPacket
         uint m_sequence;
     }
 
-    private
+scope:
+pure:
+    private nothrow @nogc
     this()
     {
     }
 
+    nothrow @nogc
     BlockPos getPos() const
     {
         const uint y = m_encodedPos & ((1 << 12) - 1);
@@ -40,7 +43,7 @@ class UseItemOnPacket
     }
 
     static
-    typeof(this) deserialize(ref InputStream input)
+    typeof(this) deserialize(scope ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 

@@ -13,10 +13,16 @@ class UpdateTimePacket
 
     enum Protocol ct_protocol = Protocol.updateTime;
 
-    private long m_worldAge;
-    private long m_timeOfDay;
-    private bool m_timeOfDayIncreasing;
+    private
+    {
+        long m_worldAge;
+        long m_timeOfDay;
+        bool m_timeOfDayIncreasing;
+    }
 
+scope:
+pure:
+    nothrow @nogc
     this(long worldAge, long timeOfDay, bool timeOfDayIncreasing)
     {
         m_worldAge = worldAge;
@@ -24,7 +30,8 @@ class UpdateTimePacket
         m_timeOfDayIncreasing = timeOfDayIncreasing;
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.write!long(m_worldAge);
         output.write!long(m_timeOfDay);

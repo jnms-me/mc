@@ -13,16 +13,23 @@ class SetCenterChunkPacket
 
     enum Protocol ct_protocol = Protocol.setCenterChunk;
 
-    private int m_x;
-    private int m_z;
+    private
+    {
+        int m_x;
+        int m_z;
+    }
 
-    this(int x, int z)
+scope:
+pure:
+    nothrow @nogc
+    this(in int x, in int z)
     {
         m_x = x;
         m_z = z;
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.writeVar!int(m_x);
         output.writeVar!int(m_z);

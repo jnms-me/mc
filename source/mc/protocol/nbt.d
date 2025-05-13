@@ -58,7 +58,7 @@ struct Nbt
     private Contents m_contents;
 
 scope:
-
+pure:
     @disable this();
     @disable this(this);
 
@@ -127,7 +127,7 @@ scope:
     alias getCompound  = get!"compound";
 
     private
-    void serializeInternal(ref OutputStream output) const
+    void serializeInternal(scope ref OutputStream output) const
     {
         switch (m_tagType)
         {
@@ -204,7 +204,7 @@ scope:
         }
     }
 
-    void serialize(ref OutputStream output) const
+    void serialize(scope ref OutputStream output) const
     {
         enforce(tagType == TagType.compound, "Can only serialize compound tags");
         output.write!ubyte(TagType.compound); // Root compound tag has no name

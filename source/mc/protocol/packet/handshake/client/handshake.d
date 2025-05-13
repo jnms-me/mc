@@ -13,30 +13,39 @@ class HandshakePacket
 
     enum Protocol ct_protocol = Protocol.handshake;
 
-    private int m_protocolVersion;
-    private string m_serverAddress;
-    private ushort m_port;
-    private int m_nextState;
-
     private
+    {
+        int m_protocolVersion;
+        string m_serverAddress;
+        ushort m_port;
+        int m_nextState;
+    }
+
+scope:
+pure:
+    private nothrow @nogc
     this()
     {
     }
 
+    nothrow @nogc
     int getProtocolVersion() const
         => m_protocolVersion;
 
+    nothrow @nogc
     string getServerAddress() const
         => m_serverAddress;
 
+    nothrow @nogc
     ushort getPort() const
         => m_port;
 
+    nothrow @nogc
     int getNextState() const
         => m_nextState;
 
     static
-    typeof(this) deserialize(ref InputStream input)
+    typeof(this) deserialize(scope ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 

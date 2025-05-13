@@ -15,17 +15,25 @@ class StatusResponsePacket
 
     enum Protocol ct_protocol = Protocol.statusResponse;
 
-    private string m_jsonString;
-
-    this(in JSONValue json)
+    private
     {
-        m_jsonString = json.toString;
+        string m_jsonString;
     }
 
+scope:
+pure:
+    nothrow @nogc
+    this(in string jsonString)
+    {
+        m_jsonString = jsonString;
+    }
+
+    nothrow @nogc
     string getJsonString() const
         => m_jsonString;
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.writePrefixedString(m_jsonString);
     }

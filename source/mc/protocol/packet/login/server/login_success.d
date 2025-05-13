@@ -15,22 +15,31 @@ class LoginSuccessPacket
 
     enum Protocol ct_protocol = Protocol.loginSuccess;
 
-    private UUID m_uuid;
-    private string m_username;
+    private
+    {
+        UUID m_uuid;
+        string m_username;
+    }
 
+scope:
+pure:
+    nothrow @nogc
     this(UUID uuid, string username)
     {
         m_uuid = uuid;
         m_username = username;
     }
 
+    nothrow @nogc
     UUID getUuid() const
         => m_uuid;
 
+    nothrow @nogc
     string getUsername() const
         => m_username;
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.write(m_uuid.data);
         output.writePrefixedString(m_username);

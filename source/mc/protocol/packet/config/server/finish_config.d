@@ -13,11 +13,15 @@ class FinishConfigPacket
 
     enum Protocol ct_protocol = Protocol.finishConfig;
 
+scope:
+pure:
+    nothrow @nogc
     this()
     {
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow @nogc
+    void serialize(scope ref OutputStream output) const
     {
     }
 }

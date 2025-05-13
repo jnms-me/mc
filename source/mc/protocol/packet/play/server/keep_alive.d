@@ -13,14 +13,21 @@ class KeepAlivePacket
 
     enum Protocol ct_protocol = Protocol.keepAlive;
 
-    private long m_id;
+    private
+    {
+        long m_id;
+    }
 
-    this(long id)
+scope:
+pure:
+    nothrow @nogc
+    this(in long id)
     {
         m_id = id;
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.write!long(m_id);
     }

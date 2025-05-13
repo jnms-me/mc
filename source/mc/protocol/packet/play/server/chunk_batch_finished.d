@@ -13,14 +13,21 @@ class ChunkBatchFinishedPacket
 
     enum Protocol ct_protocol = Protocol.chunkBatchFinished;
 
-    private int m_batchSize;
+    private
+    {
+        int m_batchSize;
+    }
 
-    this(int batchSize)
+scope:
+pure:
+    nothrow @nogc
+    this(in int batchSize)
     {
         m_batchSize = batchSize;
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.writeVar!int(m_batchSize);
     }

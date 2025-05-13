@@ -22,12 +22,12 @@ template isPacket(T)
 
 enum bool isClientPacket(T) =
     isPacket!T
-    && is(typeof(&T.deserialize) == T function(ref InputStream));
+    && __traits(compiles, {InputStream input; T packet = T.deserialize(input);});
 
 
 enum bool isServerPacket(T) =
     isPacket!T
-    && is(typeof(&(lvalueOf!T.serialize)) == void delegate(ref OutputStream) const);
+    && __traits(compiles, {OutputStream output; T.init.serialize(output);});
 
 template getPacketImplForProtocolMember(alias member)
 {

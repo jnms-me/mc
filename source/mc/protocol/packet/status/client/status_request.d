@@ -13,13 +13,15 @@ class StatusRequestPacket
 
     enum Protocol ct_protocol = Protocol.statusRequest;
 
-    private
+scope:
+pure:
+    private nothrow @nogc
     this()
     {
     }
 
-    static
-    typeof(this) deserialize(ref InputStream input)
+    static nothrow
+    typeof(this) deserialize(scope ref InputStream input)
     {
         return new typeof(this);
     }

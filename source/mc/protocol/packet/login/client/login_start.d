@@ -15,22 +15,29 @@ class LoginStartPacket
 
     enum Protocol ct_protocol = Protocol.loginStart;
 
-    private string m_userName;
-    private UUID m_uuid;
+    private
+    {
+        string m_userName;
+        UUID m_uuid;
+    }
 
+scope:
+pure:
     private
     this()
     {
     }
 
+    nothrow @nogc
     string getUserName() const
         => m_userName;
 
+    nothrow @nogc
     UUID getUuid() const
         => m_uuid;
 
     static
-    typeof(this) deserialize(ref InputStream input)
+    typeof(this) deserialize(scope ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 

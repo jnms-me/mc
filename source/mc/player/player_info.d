@@ -4,7 +4,7 @@ import std.uuid : UUID;
 
 @safe:
 
-shared
+final shared
 class PlayerInfo
 {
     private
@@ -13,6 +13,8 @@ class PlayerInfo
         string m_userName;
     }
 
+scope:
+pure nothrow @nogc:
     package(mc.player)
     this(const UUID uuid, const string userName)
     {

@@ -11,25 +11,20 @@ import mc.data.mc_version : McVersion;
 
 @safe:
 
-shared
+final shared
 class McJsonData
 {
+    // Singleton
+    private static McJsonData g_instance = new McJsonData;
+    private pure nothrow @nogc this()() scope {}
+    static nothrow @nogc McJsonData instance() => g_instance;
+
     private
     {
-        static typeof(this) g_instance = new typeof(this);
-
         string[string][McVersion] m_dataPathsByMcVersion;
     }
 
-    private
-    this() scope
-    {
-    }
-
-    static nothrow
-    McJsonData instance()
-        => g_instance;
-
+scope:
     private synchronized
     void ensureDataPathsAreLoaded()
     {
@@ -38,7 +33,7 @@ class McJsonData
     }
 
     private
-    void reloadDataPaths() scope
+    void reloadDataPaths()
     {
         shared string[string][McVersion] result;
 
@@ -62,7 +57,7 @@ class McJsonData
     }
 
     synchronized
-    string getDataFilePath(const McVersion mcVersion, const string dataType) scope
+    string getDataFilePath(const McVersion mcVersion, const string dataType)
     {
         ensureDataPathsAreLoaded;
 

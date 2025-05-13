@@ -7,6 +7,8 @@ import mc.protocol.stream : OutputStream;
 abstract shared
 class Container
 {
-    abstract
-    void serialize(ref OutputStream output) const;
+scope:
+pure:
+    abstract nothrow
+    void serialize(scope ref OutputStream output) const;
 }

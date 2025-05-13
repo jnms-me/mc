@@ -34,6 +34,9 @@ class Chunk
         ushort m_nonAirBlockCount;
     }
 
+scope:
+pure:
+    nothrow @nogc
     invariant
     {
         assert(m_blocks !is null);
@@ -42,6 +45,7 @@ class Chunk
     }
 
     /// Empty chunk ctor
+    nothrow
     this()
     {
         m_blocks = new SingleValueContainer(0);
@@ -49,17 +53,17 @@ class Chunk
         m_nonAirBlockCount = 0;
     }
 
-    synchronized
+    synchronized nothrow
     uint getBlock(const ChunkRelativeBlockPos pos) const
     {
         if (cast(const SingleValueContainer) m_blocks)
         {
-            const singleValue = m_blocks.to!(const SingleValueContainer);
+            const singleValue = cast(const SingleValueContainer) m_blocks;
             return singleValue.getValue;
         }
         else if (cast(const DirectContainer) m_blocks)
         {
-            const direct = m_blocks.to!(const DirectContainer);
+            const direct = cast(const DirectContainer) m_blocks;
             const size_t index = pos.toIndex;
             return direct[index];
         }
@@ -67,19 +71,24 @@ class Chunk
             assert(false);
     }
 
-    synchronized
+    synchronized nothrow
     void fillBlock(in BlockState blockState)
     {
         const id = blockState.getGlobalId;
         if (cast(SingleValueContainer) m_blocks)
-            m_blocks.to!SingleValueContainer.setValue(id);
+        {
+            auto singleValue = cast(SingleValueContainer) m_blocks;
+            singleValue.setValue(id);
+        }
         else
+        {
             m_blocks = new SingleValueContainer(id);
+        }
         
         m_nonAirBlockCount = id == 0 ? 0 : ct_blocksPerChunk;
     }
 
-    synchronized
+    synchronized nothrow
     void setBlock(in ChunkRelativeBlockPos pos, in uint blockId)
     {
         DirectContainer direct = cast(DirectContainer) m_blocks;
@@ -102,7 +111,8 @@ class Chunk
         direct[index] = blockId;
     }
 
-    void serialize(ref OutputStream output) const
+    nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.write!short(m_nonAirBlockCount);
         m_blocks.serialize(output);

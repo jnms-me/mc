@@ -1,38 +1,44 @@
 module mc.protocol.stream;
 
+import std.array : Appender;
 import std.bitmanip : bigEndianToNative, nativeToBigEndian;
 import std.conv : to;
-import std.exception : basicExceptionCtors, enforce;
+import std.exception : assumeWontThrow, basicExceptionCtors, enforce;
 import std.format : f = format;
 import std.meta : AliasSeq;
-import std.traits : CopyTypeQualifiers, isIntegral, Unqual, Unshared;
+import std.traits : isIntegral, Unshared;
 
-import mc.protocol.nbt : Nbt;
 import mc.util.meta : staticAmong;
-
-// TODO: purity
 
 @safe:
 
 struct InputStream
 {
-    private immutable(ubyte)[] m_slice;
+    private
+    {
+        immutable(ubyte)[] m_slice;
+    }
 
+scope:
+pure:
     this(immutable(ubyte)[] slice)
     {
         m_slice = slice;
     }
 
+    nothrow @nogc
     immutable(ubyte)[] data() const
         => m_slice;
 
+    nothrow @nogc
     bool empty() const
         => m_slice.length > 0;
 
+    nothrow @nogc
     size_t bytesLength() const
         => m_slice.length;
 
-    immutable(ubyte)[] readBytes(size_t count)
+    immutable(ubyte)[] readBytes(in size_t count)
     {
         enforce!EOFException(m_slice.length >= count);
         scope (exit) m_slice = m_slice[count .. $];
@@ -81,35 +87,49 @@ struct InputStream
 
 struct OutputStream
 {
-    private immutable(ubyte)[] m_arr;
-
-    immutable(ubyte)[] data() const
-        => m_arr;
-
-    bool empty() const
-        => m_arr.length > 0;
-
-    size_t bytesLength() const
-        => m_arr.length;
-
-    void write(T)(const T value)
-    if (staticAmong!(T, AliasSeq!(ubyte, byte, ushort, short, uint, int, ulong, long, float, double, char, bool)))
+    private
     {
-        m_arr ~= nativeToBigEndian(value);
+        Appender!(immutable(ubyte)[]) m_appender;
     }
 
-    void write(T : E[n], E, size_t n)(const T value)
+scope:
+pure:
+    private this(bool disableFieldCtor) {assert(false);}
+
+    nothrow @nogc
+    immutable(ubyte)[] data() const
+        => m_appender[];
+
+    nothrow @nogc
+    bool empty() const
+        => m_appender[].length > 0;
+
+    nothrow @nogc
+    size_t bytesLength() const
+        => m_appender[].length;
+
+    nothrow
+    void write(T)(in T value)
+    if (staticAmong!(T, AliasSeq!(ubyte, byte, ushort, short, uint, int, ulong, long, float, double, char, bool)))
+    {
+        m_appender ~= nativeToBigEndian(value)[];
+    }
+
+    nothrow
+    void write(T : E[n], E, size_t n)(in T value)
     if (__traits(compiles, write!E))
     {
         foreach (el; value)
             write!E(el);
     }
 
-    void writeBytes(const immutable(ubyte)[] arr)
+    nothrow
+    void writeBytes(in immutable(ubyte)[] arr)
     {
-        m_arr ~= arr;
+        m_appender ~= arr;
     }
 
+    nothrow
     void writeVar(T)(T value)
     if (staticAmong!(T, AliasSeq!(uint, int, ulong, long)))
     {
@@ -124,6 +144,7 @@ struct OutputStream
         while (value);
     }
 
+    nothrow
     void writeArray(T : E[], E)(in T arr)
     {
         foreach (el; arr)
@@ -133,19 +154,14 @@ struct OutputStream
         }
     }
 
+    nothrow
     void writePrefixedArray(T : E[], E)(in T arr)
     {
-        writeVar!int(arr.length.to!int);
+        writeVar!int(arr.length.to!int.assumeWontThrow);
         writeArray(arr);
     }
 
-    void writePrefixedString(const immutable(char)[] s)
-        => writePrefixedArray(s);
-
-    void writeNbt(ref const Nbt nbt)
-    {
-        nbt.serialize(this);
-    }
+    alias writePrefixedString = writePrefixedArray;
 }
 
 class EOFException : Exception

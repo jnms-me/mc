@@ -21,6 +21,9 @@ class PalettedContainer : Container
         ulong[] m_data;
     }
 
+scope:
+pure:
+    nothrow @nogc
     invariant
     {
         assert(0 < m_minBitsPerValue);
@@ -31,6 +34,7 @@ class PalettedContainer : Container
     }
 
     /// Create empty container ctor
+    nothrow
     this(ubyte minBitsPerValue, ubyte maxBitsPerValue, uint initialSingleValue = 0)
     in (minBitsPerValue <= maxBitsPerValue && maxBitsPerValue <= 12)
     {
@@ -41,7 +45,8 @@ class PalettedContainer : Container
     }
 
     /// Copy ctor
-    this(ref typeof(this) other)
+    nothrow
+    this(in typeof(this) other)
     {
         m_minBitsPerValue = other.m_minBitsPerValue;
         m_maxBitsPerValue = other.m_maxBitsPerValue;
@@ -49,20 +54,20 @@ class PalettedContainer : Container
         m_data            = other.m_data.dup;
     }
 
-    private pure nothrow
+    private nothrow @nogc
     size_t bitsPerValue() const
     in (m_palette.length)
         => m_maxBitsPerValue;
 
-    private pure nothrow
+    private nothrow @nogc
     size_t valuesPerUlong() const
         => bitSize!ulong / bitsPerValue;
 
-    private pure nothrow
+    private nothrow @nogc
     size_t dataLength() const
         => ct_blocksPerChunk.ceilDiv(valuesPerUlong);
 
-    private pure nothrow
+    private nothrow
     void recreateDataIfNeeded(ubyte lastBitsPerValue)
     {
         const newDataLength = dataLength;
@@ -78,7 +83,7 @@ class PalettedContainer : Container
     }
 
     /// After modifying the pallette length, a new `values` range must be obtained.
-    pure nothrow
+    nothrow @nogc
     auto values() inout
     {
         static
@@ -105,8 +110,8 @@ class PalettedContainer : Container
         return Range(m_data, bitsPerValue);
     }
 
-    override
-    void serialize(ref OutputStream output) const
+    override nothrow
+    void serialize(scope ref OutputStream output) const
     {
         output.writeVar!uint(m_minBitsPerValue);
         foreach (const uint id; m_palette)

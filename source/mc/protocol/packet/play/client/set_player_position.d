@@ -13,13 +13,15 @@ class SetPlayerPositionPacket
 
     enum Protocol ct_protocol = Protocol.setPlayerPosition;
 
-    private
+scope:
+pure:
+    private nothrow @nogc
     this()
     {
     }
 
-    static
-    typeof(this) deserialize(ref InputStream)
+    static nothrow
+    typeof(this) deserialize(scope ref InputStream)
     {
         return new typeof(this);
     }

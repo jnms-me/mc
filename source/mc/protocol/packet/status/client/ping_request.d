@@ -13,18 +13,24 @@ class PingRequestPacket
 
     enum Protocol ct_protocol = Protocol.pingRequest;
 
-    private ulong m_payload;
-
     private
+    {
+        ulong m_payload;
+    }
+
+scope:
+pure:
+    private nothrow @nogc
     this()
     {
     }
 
+    nothrow @nogc
     ulong getPayload() const
         => m_payload;
 
     static
-    typeof(this) deserialize(ref InputStream input)
+    typeof(this) deserialize(scope ref InputStream input)
     {
         typeof(this) instance = new typeof(this);
 
