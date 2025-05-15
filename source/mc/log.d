@@ -2,8 +2,9 @@ module mc.log;
 
 import std.algorithm : map;
 import std.array : Appender;
-import std.format : f = format;
-import std.stdio : writef, writefln;
+import std.ascii : newline;
+import std.format : format, formattedWrite;
+import std.stdio : File, stdout;
 
 import mc.config : Config;
 import mc.util.ansi_color : AnsiColor;
@@ -12,14 +13,14 @@ import mc.util.ansi_color : AnsiColor;
 
 struct LogLevel
 {
-    enum trace      = LogLevel(0, AnsiColor.reset.fg.light.italic, "[TRACE] %s");
-    enum debug_     = LogLevel(1, AnsiColor.reset.fg.light, "[DEBUG] %s");
-    enum diagnostic = LogLevel(2, "[DIAG] %s");
-    enum info       = LogLevel(3, AnsiColor.reset.fg.green, "[INFO] %s");
-    enum warning    = LogLevel(4, AnsiColor.reset.fg.yellow, "[WARN] %s");
-    enum error      = LogLevel(5, AnsiColor.reset.fg.red.bold, "[ERROR] %s");
-    enum critical   = LogLevel(6, AnsiColor.reset.bg.red.bold, "[CRIT] %s");
-    enum fatal      = LogLevel(7, AnsiColor.reset.bg.red.light.bold, "[FATAL] %s");
+    enum fatal      = LogLevel(0, AnsiColor.reset.bg.red.light.bold, "[FATAL] %s");
+    enum critical   = LogLevel(1, AnsiColor.reset.bg.red.bold, "[CRIT] %s");
+    enum error      = LogLevel(2, AnsiColor.reset.fg.red.bold, "[ERROR] %s");
+    enum warning    = LogLevel(3, AnsiColor.reset.fg.yellow, "[WARN] %s");
+    enum info       = LogLevel(4, AnsiColor.reset.fg.green, "[INFO] %s");
+    enum diagnostic = LogLevel(5, "[DIAG] %s");
+    enum debug_     = LogLevel(6, AnsiColor.reset.fg.light, "[DEBUG] %s");
+    enum trace      = LogLevel(7, AnsiColor.reset.fg.light.italic, "[TRACE] %s");
 
     private
     {
@@ -38,10 +39,15 @@ pure:
             foreach (fmt; fmtParts)
                 a ~= fmt;
             a ~= AnsiColor.reset.toString;
+            a ~= newline;
             return a[];
         }();
     }
 }
+
+private @trusted nothrow @nogc
+ref File trustedStdout()
+    => stdout;
 
 struct Logger
 {
@@ -50,11 +56,16 @@ struct Logger
         string m_id = "Unspecified";
     }
 
+scope:
+    invariant
+    {
+        assert(m_id.length);
+    }
+
     static pure nothrow @nogc
     Logger moduleLogger(in string module_ = __MODULE__)
         => Logger(module_);
 
-scope:
     pure nothrow @nogc
     this(in string id)
     in (id.length)
@@ -66,24 +77,17 @@ scope:
     Logger derive(in string id) const
         => Logger(m_id ~ ": " ~ id);
 
-    void log(LogLevel level, string fmt, Args...)(lazy Args args) const
+    void log(LogLevel ct_level, string ct_fmt, Args...)(lazy Args args) const
     {
-        static if (level.m_level >= Config.ct_logLevel.m_level)
+        if (ct_level.m_level <= Config.ct_logLevel.m_level)
         {
-            try
-            {
-                // TODO: split writing and formatting to differentiate lazy args eval exceptions from log exceptions
-                try
-                    writefln!(level.m_fmt)(f!"%s: %s"(m_id, f!fmt(args)));
-                catch (Exception e)
-                {
-                    writefln!"Writing log failed with exception %s"(typeid(e));
-                    debug writefln!"Trace: %s"(e.toString);
-                }
-            }
-            catch (Exception e)
-            {
-            }
+            enum string ct_combinedFmt = ct_level.m_fmt
+                .format("%s: %s")
+                .format("%s", ct_fmt);
+
+            trustedStdout
+                .lockingTextWriter
+                .formattedWrite!ct_combinedFmt(m_id, args);
         }
     }
 

@@ -4,16 +4,16 @@ import core.time : seconds;
 
 import std.algorithm : map;
 import std.conv : hexString, to;
+import std.exception : assumeWontThrow;
 import std.format : f = format;
 import std.json : JSONValue;
 import std.range.primitives : empty, front, popFront;
-import std.traits : EnumMembers;
 import std.uuid : UUID;
 
 import eventcore.core : IOMode;
 
 import vibe.core.core : runTask, sleep, yield;
-import vibe.core.net : NetworkAddress, TCPConnection;
+import vibe.core.net : TCPConnection;
 import vibe.core.task : InterruptException, Task;
 
 import mc.config : Config;
@@ -26,6 +26,7 @@ import mc.protocol.enums : GameEvent, State;
 import mc.protocol.nbt : Nbt;
 import mc.protocol.packet.traits : getPacketImplForProtocolMember, isServerPacket;
 import mc.protocol.stream : EOFException, InputStream, OutputStream;
+import mc.util.meta : enumSwitch;
 import mc.world.block.property : PropertyValue;
 import mc.world.chunk.chunk : Chunk;
 import mc.world.position : BlockPos, ChunkPos;
@@ -36,205 +37,195 @@ import packets = mc.protocol.packet.packets;
 
 immutable log = Logger.moduleLogger;
 
-final
-class Player
+struct PlayerConnection
 {
     private
     {
-        Logger m_log;
+        Logger m_log = log.derive("PlayerConnection");
 
         OutputStream[] m_outgoingPacketQueue;
-        Object m_outgoingPacketQueueMutex = new Object;
 
-        NetworkAddress m_remoteAddress;
         State m_state;
+        long m_keepAliveId;
 
         PlayerInfo m_sharedPlayerInfo;
         UUID m_uuid;
         string m_userName;
 
-        long m_keepAliveId;
-
         BlockPos m_pos = Config.ct_spawnPos;
     }
 
 scope:
-    void handleConnection(scope TCPConnection conn)
+    pure
+    invariant
     {
-        m_remoteAddress = conn.remoteAddress;
-        rederiveLogger;
 
-        m_log.info!"Client connected";
+    }
 
-        Task reader = runTask(&readerTask, conn);
-        Task writer = runTask(&writerTask, conn);
+    static
+    void handleConnection(scope ref TCPConnection conn)
+    in (Task.getThis)
+    {
+        PlayerConnection instance = PlayerConnection(conn);
+
+        // These run in the same thread as this task
+        Task reader = runTask(&instance.wrapTask!("reader", readerTaskEntrypoint), conn);
+        Task writer = runTask(&instance.wrapTask!("writer", writerTaskEntrypoint), conn);
 
         while (reader.running && writer.running)
             yield;
+
         reader.interrupt;
         writer.interrupt;
+    }
 
+    private
+    this(scope ref TCPConnection conn)
+    {
+        m_log = m_log.derive(f!" %s"(conn.remoteAddress));
+        m_log.info!"Client connected";
+    }
+
+    private
+    ~this()
+    {
         if (m_sharedPlayerInfo !is null)
             g_players.remove(m_sharedPlayerInfo);
     }
 
-    private
-    void rederiveLogger()
-    {
-        string prefix = "Player";
-        if (!m_uuid.empty && m_userName.length)
-            prefix ~= f!" %s"(m_userName);
-        else if (m_remoteAddress != m_remoteAddress.init)
-            prefix ~= f!" %s"(m_remoteAddress);
-
-        m_log = log.derive(prefix);
-    }
-
     private nothrow
-    void readerTask(scope TCPConnection conn)
+    void wrapTask(string ct_name, alias entrypoint)(scope ref TCPConnection conn)
     {
         try
         {
-            ubyte[] buf = new ubyte[](Config.ct_packetBufSize);
-            immutable(ubyte)[] readData;
-
-            while (conn.waitForData)
+            m_log.diag!`Task "%s" started`(ct_name);
+            try
+                entrypoint(conn);
+            catch (InterruptException)
+                m_log.diag!`Task "%s" interrupted`(ct_name);
+            catch (Exception e)
             {
-                size_t read = conn.read(buf, IOMode.once);
-                readData ~= buf[0 .. read];
-
-                immutable(ubyte)[][] readPackets;
-                while (readData.length)
-                {
-                    // Setup temp InputStream for readVar
-                    InputStream input = InputStream(readData);
-
-                    // Call readVar
-                    size_t lengthPrefix;
-                    try
-                        lengthPrefix = input.readVar!int.to!size_t;
-                    catch (EOFException e)
-                        break;
-
-                    // Determine how many bytes readVar advanced
-                    ptrdiff_t lengthPrefixLength = readData.length - input.data.length;
-                    assert(lengthPrefixLength > 0);
-
-                    // Add this packet
-                    immutable(ubyte)[] packet = readData[lengthPrefixLength .. lengthPrefixLength + lengthPrefix];
-                    readData = readData[lengthPrefixLength + lengthPrefix .. $];
-                    readPackets ~= packet;
-                }
-
-                foreach (InputStream input; readPackets.map!InputStream)
-                    handleRawPacket(input);
+                debug const msg = e.toString;
+                else const msg = e.msg;
+                m_log.error!`Uncaught %s in "%s" task: "%s"`(typeid(e), ct_name, msg);
             }
+            m_log.diag!`Task "%s" exited`(ct_name);
         }
-        catch (InterruptException)
-            m_log.diag!"Reader task interrupted";
         catch (Exception e)
-            m_log.error!"Exception in reader task: %s"((() @trusted => e.toString)());
-        m_log.info!"Client disconnected";
-    }
-
-    private nothrow
-    void writerTask(scope TCPConnection conn)
-    {
-        try
-            while (conn.connected)
-            {
-                synchronized (m_outgoingPacketQueueMutex)
-                    while (!m_outgoingPacketQueue.empty)
-                    {
-                        const OutputStream packet = m_outgoingPacketQueue.front;
-                        m_outgoingPacketQueue.popFront;
-
-                        conn.write(packet.data, IOMode.all);
-                        conn.flush;
-                    }
-                yield;
-            }
-        catch (InterruptException)
-            m_log.diag!"Writer task interrupted";
-        catch (Exception e)
-            m_log.error!"Exception in writer task: %s"((() @trusted => e.toString)());
+            assert(false, "wrapTask: Failed writing log");
     }
 
     private
-    void handleRawPacket(InputStream input)
+    void readerTaskEntrypoint(scope ref TCPConnection conn)
     {
-        const int protocol = input.readVar!int;
+        ubyte[] buf = new ubyte[](Config.ct_packetBufSize);
+        immutable(ubyte)[] readData;
 
-        void throwInvalidState()
-            => throw new Exception(f!"Entered invalid state %s"(m_state));
-
-        void warnUnimplementedProtocol(alias ct_protocol)()
+        while (conn.waitForData)
         {
-            m_log.diag!"Dropping packet for unimplemented protocol %s in state %s"(
-                ct_protocol.stringof, m_state,
-            );
-        }
+            size_t read = conn.read(buf, IOMode.once);
+            readData ~= buf[0 .. read];
 
-        void warnUnknownProtocol()
-        {
-            m_log.diag!"Dropping packet for unknown protocol %02x in state %s"(
-                protocol, m_state,
-            );
-        }
-
-        void handleProtocol(alias ct_protocol)()
-        {
-            static if (is(getPacketImplForProtocolMember!ct_protocol Packet))
+            immutable(ubyte)[][] readPackets;
+            while (readData.length)
             {
-                Packet packet = Packet.deserialize(input);
-                m_log.dbg!"Got a %s"(Packet.stringof);
-                this.handlePacket(packet);
-            }
-            else
-                warnUnimplementedProtocol!ct_protocol;
-        }
+                // Setup temp InputStream for readVar
+                InputStream input = InputStream(readData);
 
-        void handleState(alias ct_state)()
-        {
-            static if (is(mixin(f!"packets.%s.client"(ct_state.stringof)) client == module))
-            {
-                static assert (is(client.Protocol baseType == enum) && is(baseType == int));
-                sw: switch (protocol)
-                {
-                    static foreach (ct_protocol; EnumMembers!(client.Protocol))
-                    {
-                case ct_protocol:
-                        handleProtocol!ct_protocol;
-                        break sw;
-                    }
-                default:
-                    warnUnknownProtocol;
+                // Call readVar
+                size_t lengthPrefix;
+                try
+                    lengthPrefix = input.readVar!int.to!size_t;
+                catch (EOFException e)
                     break;
-                }
-            }
-            else
-                throwInvalidState;
-        }
 
-        sw: switch (m_state)
-        {
-            static foreach (ct_state; EnumMembers!State)
-            {
-        case ct_state:
-                handleState!ct_state;
-                break sw;
+                // Determine how many bytes readVar advanced
+                const ptrdiff_t lengthPrefixLength = readData.length - input.data.length;
+                assert(lengthPrefixLength > 0);
+
+                // Add this packet
+                immutable(ubyte)[] packet = readData[lengthPrefixLength .. lengthPrefixLength + lengthPrefix];
+                readData = readData[lengthPrefixLength + lengthPrefix .. $];
+                readPackets ~= packet;
             }
-        default:
-            throwInvalidState;
+
+            foreach (InputStream input; readPackets.map!InputStream)
+            {
+                const uint protocolUint;
+                handleRawPacket(protocolUint, input);
+            }
         }
+    }
+
+    private
+    void writerTaskEntrypoint(scope ref TCPConnection conn)
+    {
+        while (conn.connected)
+        {
+            while (!m_outgoingPacketQueue.empty)
+            {
+                const OutputStream packet = m_outgoingPacketQueue.front;
+                m_outgoingPacketQueue.popFront;
+
+                conn.write(packet.data, IOMode.all);
+                conn.flush;
+            }
+            yield;
+        }
+    }
+
+    private
+    void handleRawPacket(in uint protocolUint, scope ref InputStream input)
+    {
+        mixin enumSwitch!(m_state, handleRawPacketBodyInState, protocolUint, input);
+        sw();
+    }
+
+    private
+    void handleRawPacketBodyInState(State ct_state)(in uint protocolUint, scope ref InputStream input)
+    {
+        static if (is(mixin(f!"packets.%s.client"(ct_state.stringof)) client == module))
+        {
+            alias Protocol = client.Protocol;
+            static assert(is(Protocol BaseType == enum) && is(BaseType == int));
+
+            Protocol protocol;
+            try
+                protocol = protocolUint.to!Protocol;
+            catch (ConvException)
+            {
+                m_log.diag!"Dropping packet for unknown protocol %02x in state %s"(protocol, m_state);
+                return;
+            }
+
+            mixin enumSwitch!(protocol, handleRawPacketBodyForStateProtocolMember, input);
+            sw();
+        }
+        else
+        {
+            throw new Exception(f!"Entered invalid state %s"(m_state));
+        }
+    }
+
+    private
+    void handleRawPacketBodyForStateProtocolMember(alias protocolMember)(scope ref InputStream input)
+    {
+        static if (is(getPacketImplForProtocolMember!protocolMember Packet))
+        {
+            Packet packet = Packet.deserialize(input);
+            debug m_log.dbg!"Got a %s"(Packet.stringof);
+            this.handlePacket(packet);
+        }
+        else
+            m_log.diag!"Dropping packet for unimplemented protocol %s in state %s"(protocolMember.stringof, m_state);
     }
 
     private pure
     void handlePacket(packets.handshake.client.HandshakePacket packet)
     {
-        m_log.dbg!"  protocolVersion = %s"(packet.getProtocolVersion);
-        m_log.dbg!"  serverAddress = %s, port = %s"(packet.getServerAddress, packet.getPort);
-        m_log.dbg!"  nextState = %s"(packet.getNextState);
+        debug m_log.dbg!"  protocolVersion = %s"(packet.getProtocolVersion);
+        debug m_log.dbg!"  serverAddress = %s, port = %s"(packet.getServerAddress, packet.getPort);
+        debug m_log.dbg!"  nextState = %s"(packet.getNextState);
 
         switchState(packet.getNextState.to!State);
     }
@@ -245,7 +236,7 @@ scope:
         sendStatusResponse;
     }
 
-    private pure
+    private pure nothrow
     void handlePacket(packets.status.client.PingRequestPacket packet)
     {
         sendPacket(new packets.status.server.PongResponsePacket(packet.getPayload));
@@ -259,7 +250,7 @@ scope:
 
         m_uuid = packet.getUuid;
         m_userName = packet.getUserName;
-        rederiveLogger;
+        m_log = m_log.derive(f!" %s"(m_userName));
 
         m_sharedPlayerInfo = new PlayerInfo(m_uuid, m_userName);
         g_players[m_sharedPlayerInfo] = true;
@@ -276,32 +267,32 @@ scope:
         sendPacket(new packets.config.server.FinishConfigPacket);
     }
 
-    private pure
+    private pure nothrow @nogc
     void handlePacket(packets.login.client.PluginMessagePacket packet)
     {
-        m_log.dbg!"  channel = %s"(packet.getChannel);
-        m_log.dbg!"  data = %s"(packet.getData);
+        debug m_log.dbg!"  channel = %s"(packet.getChannel);
+        debug m_log.dbg!"  data = %s"(packet.getData);
     }
 
-    private
+    private pure nothrow @nogc
     void handlePacket(packets.config.client.ClientInfoPacket packet)
     {
-        m_log.dbg!"  locale              = %s"(packet.getLocale);
-        m_log.dbg!"  renderDistance      = %s"(packet.getRenderDistance);
-        m_log.dbg!"  chatMode            = %s"(packet.getChatMode);
-        m_log.dbg!"  chatColors          = %s"(packet.getChatColors);
-        m_log.dbg!"  displayedSkinParts  = %s"(packet.getDisplayedSkinParts);
-        m_log.dbg!"  mainHand            = %s"(packet.getMainHand);
-        m_log.dbg!"  textFiltering       = %s"(packet.getTextFiltering);
-        m_log.dbg!"  showInOnlinePlayers = %s"(packet.getShowInOnlinePlayers);
-        m_log.dbg!"  particleLevel       = %s"(packet.getParticleLevel);
+        debug m_log.dbg!"  locale              = %s"(packet.getLocale);
+        debug m_log.dbg!"  renderDistance      = %s"(packet.getRenderDistance);
+        debug m_log.dbg!"  chatMode            = %s"(packet.getChatMode);
+        debug m_log.dbg!"  chatColors          = %s"(packet.getChatColors);
+        debug m_log.dbg!"  displayedSkinParts  = %s"(packet.getDisplayedSkinParts);
+        debug m_log.dbg!"  mainHand            = %s"(packet.getMainHand);
+        debug m_log.dbg!"  textFiltering       = %s"(packet.getTextFiltering);
+        debug m_log.dbg!"  showInOnlinePlayers = %s"(packet.getShowInOnlinePlayers);
+        debug m_log.dbg!"  particleLevel       = %s"(packet.getParticleLevel);
     }
 
-    private
+    private pure nothrow @nogc
     void handlePacket(packets.config.client.PluginMessagePacket packet)
     {
-        m_log.dbg!"  channel = %s"(packet.getChannel);
-        m_log.dbg!"  data = %s"(packet.getData);
+        debug m_log.dbg!"  channel = %s"(packet.getChannel);
+        debug m_log.dbg!"  data = %s"(packet.getData);
     }
 
     private
@@ -312,10 +303,10 @@ scope:
         sendPacket(new packets.play.server.LoginPacket);
         m_log.info!"Joined the world";
 
-        m_log.dbg!"Sending abilities";
+        debug m_log.dbg!"Sending abilities";
         sendHexPacket(0x3a, hexString!("0f" ~ "3d4ccccd" ~ "3dcccccd"));
 
-        m_log.dbg!"Sending player entity status";
+        debug m_log.dbg!"Sending player entity status";
         sendHexPacket(0x1f, hexString!("00000000" ~ "18")); // op level 0
 
         sendPacket(new packets.play.server.SetPlayerPositionPacket(
@@ -324,16 +315,16 @@ scope:
 
         sendWorldTime;
 
-        m_log.dbg!"Sending default spawn position";
+        debug m_log.dbg!"Sending default spawn position";
         sendHexPacket(0x5b, hexString!"0000020000008fc100000000");
 
         sendAllChunks;
 
-        m_log.dbg!"Sending keep alive";
+        debug m_log.dbg!"Sending keep alive";
         sendPacket(new packets.play.server.KeepAlivePacket(m_keepAliveId));
     }
 
-    private nothrow
+    private
     void handlePacket(packets.play.client.KeepAlivePacket packet)
     {
         if (m_keepAliveId != packet.getId)
@@ -343,7 +334,7 @@ scope:
             try
             {
                 sleep(5.seconds);
-                m_log.dbg!"Sending keep alive";
+                debug m_log.dbg!"Sending keep alive";
                 sendPacket(new packets.play.server.KeepAlivePacket(++m_keepAliveId));
             }
             catch (Exception e) {}
@@ -426,9 +417,9 @@ scope:
     void sendRegistryData()
     in (m_state == State.config)
     {
-        m_log.dbg!"Sending all registry data";
+        debug m_log.dbg!"Sending all registry data";
 
-        m_log.dbg!"minecraft:painting_variant";
+        debug m_log.dbg!"minecraft:painting_variant";
         {
             auto registryDataPacket = new packets.config.server.RegistryDataPacket("minecraft:painting_variant");
             auto entryNbt = Nbt([
@@ -447,7 +438,7 @@ scope:
             registryDataPacket.addEntry("minecraft:alban", entryNbt);
             sendPacket(registryDataPacket);
         }
-        m_log.dbg!"minecraft:wolf_variant";
+        debug m_log.dbg!"minecraft:wolf_variant";
         {
             auto registryDataPacket = new packets.config.server.RegistryDataPacket("minecraft:wolf_variant");
             auto entryNbt = Nbt([
@@ -459,7 +450,7 @@ scope:
             registryDataPacket.addEntry("minecraft:ashen", entryNbt);
             sendPacket(registryDataPacket);
         }
-        m_log.dbg!"minecraft:dimension_type";
+        debug m_log.dbg!"minecraft:dimension_type";
         {
             auto registryDataPacket = new packets.config.server.RegistryDataPacket("minecraft:dimension_type");
             foreach (dimension; ["overworld", "the_nether", "the_end"])
@@ -491,7 +482,7 @@ scope:
             }
             sendPacket(registryDataPacket);
         }
-        m_log.dbg!"minecraft:damage_type";
+        debug m_log.dbg!"minecraft:damage_type";
         {
             auto registryDataPacket = new packets.config.server.RegistryDataPacket("minecraft:damage_type");
             foreach (damageType; ["arrow", "bad_respawn_point", "cactus", "campfire", "cramming", "dragon_breath", "drown", "dry_out", "ender_pearl", "explosion", "fall", "falling_anvil", "falling_block", "falling_stalactite", "fireball", "fireworks", "fly_into_wall", "freeze", "generic", "generic_kill", "hot_floor", "in_fire", "in_wall", "indirect_magic", "lava", "lightning_bolt", "mace_smash", "magic", "mob_attack", "mob_attack_no_aggro", "mob_projectile", "on_fire", "out_of_world", "outside_border", "player_attack", "player_explosion", "sonic_boom", "spit", "stalagmite", "starve", "sting", "sweet_berry_bush", "thorns", "thrown", "trident", "unattributed_fireball", "wind_charge", "wither", "wither_skull"])
@@ -505,7 +496,7 @@ scope:
             }
             sendPacket(registryDataPacket);
         }
-        m_log.dbg!"minecraft:worldgen/biome";
+        debug m_log.dbg!"minecraft:worldgen/biome";
         {
             auto registryDataPacket = new packets.config.server.RegistryDataPacket("minecraft:worldgen/biome");
             foreach (biome; ["void", "plains"])
@@ -558,7 +549,7 @@ scope:
             Config.ct_spawnPos.toChunkPos.z,
         ));
 
-        m_log.dbg!"Sending wait for chunks game event";
+        debug m_log.dbg!"Sending wait for chunks game event";
         sendPacket(new packets.play.server.GameEventPacket(GameEvent.waitForLevelChunks, 0));
 
         sendPacket(new packets.play.server.ChunkBatchStartPacket);
@@ -577,34 +568,33 @@ scope:
                 sendPacket(new packets.play.server.ChunkDataPacket(x, z, heightMaps, chunks));
                 chunksSent++;
             }
-        m_log.dbg!"Sent %d chunks"(chunksSent);
+        debug m_log.dbg!"Sent %d chunks"(chunksSent);
 
         sendPacket(new packets.play.server.ChunkBatchFinishedPacket(chunksSent));
     }
 
-    private pure
+    private pure nothrow @nogc
     void switchState(const State state)
     {
         m_state = state;
-        m_log.dbg!"Switched to state %s"(m_state);
+        debug m_log.dbg!"Switched to state %s"(m_state);
     }
 
     private pure
     void sendPacket(Packet)(const Packet packet)
     if (isServerPacket!Packet)
     {
-        m_log.dbg!"Sending a %s"(Packet.stringof);
+        debug m_log.dbg!"Sending a %s"(Packet.stringof);
 
         OutputStream output;
         output.writeVar!int(packet.ct_protocol);
         packet.serialize(output);
 
         OutputStream lengthPrefixedOutput;
-        lengthPrefixedOutput.writeVar!int(output.data.length.to!int);
+        lengthPrefixedOutput.writeVar!int(output.data.length.to!int.assumeWontThrow);
         lengthPrefixedOutput.writeBytes(output.data);
 
-        synchronized (m_outgoingPacketQueueMutex)
-            m_outgoingPacketQueue ~= lengthPrefixedOutput;
+        m_outgoingPacketQueue ~= lengthPrefixedOutput;
     }
 
     private pure
@@ -615,10 +605,9 @@ scope:
         output.writeBytes(cast(immutable(ubyte)[]) hexString);
 
         OutputStream lengthPrefixedOutput;
-        lengthPrefixedOutput.writeVar!int(output.data.length.to!int);
+        lengthPrefixedOutput.writeVar!int(output.data.length.to!int.assumeWontThrow);
         lengthPrefixedOutput.writeBytes(output.data);
 
-        synchronized (m_outgoingPacketQueueMutex)
-            m_outgoingPacketQueue ~= lengthPrefixedOutput;
+        m_outgoingPacketQueue ~= lengthPrefixedOutput;
     }
 }

@@ -1,9 +1,9 @@
 module mc.world.position;
 
 import std.algorithm : all, map, sum;
-import std.conv : to;
+import std.conv : roundTo, to;
 import std.exception : assumeWontThrow;
-import std.math : isFinite, round, sqrt;
+import std.math : isFinite, sqrt;
 import std.traits : isFloatingPoint, isIntegral, isNumeric, Unqual;
 
 import mc.util.meta : staticAmong;
@@ -60,7 +60,7 @@ pure:
         static if (isFloatingPoint!T)
             return sum.sqrt;
         else
-            return sum.to!F.sqrt.round.to!T.assumeWontThrow;
+            return sum.to!F.sqrt.roundTo!T.assumeWontThrow;
     }
 
     nothrow @nogc
@@ -243,9 +243,9 @@ pure:
     nothrow
     BlockPos toBlockPos() scope const
         => BlockPos(
-            x.round.to!int.assumeWontThrow,
-            y.round.to!int.assumeWontThrow,
-            z.round.to!int.assumeWontThrow,
+            x.roundTo!int.assumeWontThrow,
+            y.roundTo!int.assumeWontThrow,
+            z.roundTo!int.assumeWontThrow,
         );
 
     alias vector this;

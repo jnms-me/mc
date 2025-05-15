@@ -1,6 +1,6 @@
 module mc.util.meta;
 
-import std.meta : AliasSeq, Stride;
+import std.meta : AliasSeq;
 
 @safe:
 
@@ -18,8 +18,6 @@ unittest
     static assert(!staticAmong!(int, ushort, uint, string));
 }
 
-alias getMember(alias T, string member) = __traits(getMember, T, member);
-
 template members(alias T)
 {
     alias members = AliasSeq!();
@@ -28,3 +26,23 @@ template members(alias T)
 }
 
 enum string stringof(alias arg) = arg.stringof;
+
+mixin template enumSwitch(alias value, alias handler, args...)
+if (is(typeof(value) == enum))
+{
+    auto sw()
+    {
+        import std.traits : EnumMembers;
+
+        alias Enum = typeof(value);
+
+        final switch (value)
+        {
+            static foreach (i, alias enumMember; EnumMembers!Enum)
+            {
+            case enumMember:
+                return handler!enumMember(args);
+            }
+        }
+    }
+}
