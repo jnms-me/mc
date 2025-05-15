@@ -2,7 +2,7 @@ module mc.main;
 
 import vibe.core.core : runEventLoopOnce;
 
-import mc.log : Logger;
+import mc.util.log : Logger;
 import mc.server.server : runServerTask;
 
 @safe:

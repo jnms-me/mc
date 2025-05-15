@@ -1,49 +1,14 @@
-module mc.log;
+module mc.util.log.logger;
 
 import std.algorithm : map;
 import std.array : Appender;
-import std.ascii : newline;
 import std.format : format, formattedWrite;
 import std.stdio : File, stdout;
 
 import mc.config : Config;
-import mc.util.ansi_color : AnsiColor;
+import mc.util.log.log_level : LogLevel;
 
 @safe:
-
-struct LogLevel
-{
-    enum fatal      = LogLevel(0, AnsiColor.reset.bg.red.light.bold, "[FATAL] %s");
-    enum critical   = LogLevel(1, AnsiColor.reset.bg.red.bold, "[CRIT] %s");
-    enum error      = LogLevel(2, AnsiColor.reset.fg.red.bold, "[ERROR] %s");
-    enum warning    = LogLevel(3, AnsiColor.reset.fg.yellow, "[WARN] %s");
-    enum info       = LogLevel(4, AnsiColor.reset.fg.green, "[INFO] %s");
-    enum diagnostic = LogLevel(5, "[DIAG] %s");
-    enum debug_     = LogLevel(6, AnsiColor.reset.fg.light, "[DEBUG] %s");
-    enum trace      = LogLevel(7, AnsiColor.reset.fg.light.italic, "[TRACE] %s");
-
-    private
-    {
-        uint m_level;
-        string m_fmt;
-    }
-
-scope:
-pure:
-    private nothrow
-    this(FmtParts...)(in uint level, in FmtParts fmtParts)
-    {
-        m_level = level;
-        m_fmt = {
-            Appender!string a;
-            foreach (fmt; fmtParts)
-                a ~= fmt;
-            a ~= AnsiColor.reset.toString;
-            a ~= newline;
-            return a[];
-        }();
-    }
-}
 
 private @trusted nothrow @nogc
 ref File trustedStdout()
@@ -79,9 +44,9 @@ scope:
 
     void log(LogLevel ct_level, string ct_fmt, Args...)(lazy Args args) const
     {
-        if (ct_level.m_level <= Config.ct_logLevel.m_level)
+        if (ct_level <= Config.ct_logLevel)
         {
-            enum string ct_combinedFmt = ct_level.m_fmt
+            enum string ct_combinedFmt = ct_level.getFmt
                 .format("%s: %s")
                 .format("%s", ct_fmt);
 

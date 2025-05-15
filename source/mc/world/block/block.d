@@ -59,7 +59,7 @@ pure:
         }();
         m_defaultStateId = defaultStateId;
 
-        import mc.log;
+        import mc.util.log : Logger;
         if (name == "lever")
         {
             debug try {Logger.moduleLogger.info!"%s"(m_stateProperties); } catch (Exception e) {}

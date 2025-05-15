@@ -19,7 +19,7 @@ import vibe.core.task : InterruptException, Task;
 import mc.config : Config;
 import mc.data.blocks : BlocksByVersion, BlockSet;
 import mc.data.mc_version : McVersion;
-import mc.log : Logger;
+import mc.util.log : Logger;
 import mc.player.player_info : PlayerInfo;
 import mc.player.players : g_players;
 import mc.protocol.enums : GameEvent, State;

@@ -2,7 +2,7 @@ module mc.config;
 
 import vibe.core.net : TCPListenOptions;
 
-import mc.log : Logger, LogLevel;
+import mc.util.log : Logger, LogLevel;
 import mc.world.position : BlockPos;
 
 @safe:
@@ -31,7 +31,7 @@ shared static this()
 {
     import mc.data.blocks : BlocksByVersion, BlockSet;
     import mc.data.mc_version : McVersion;
-    import mc.log : Logger;
+    import mc.util.log : Logger;
     import mc.world.chunk.chunk : Chunk;
     import mc.world.block.block : Block;
     import mc.world.block.block_state : BlockState;

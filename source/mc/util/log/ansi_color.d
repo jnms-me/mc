@@ -1,4 +1,4 @@
-module mc.util.ansi_color;
+module mc.util.log.ansi_color;
 
 import std.exception : assumeWontThrow;
 import std.format : f = format;
