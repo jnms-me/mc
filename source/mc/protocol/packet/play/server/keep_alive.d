@@ -15,13 +15,13 @@ class KeepAlivePacket
 
     private
     {
-        long m_id;
+        ulong m_id;
     }
 
 scope:
 pure:
     nothrow @nogc
-    this(in long id)
+    this(in ulong id)
     {
         m_id = id;
     }
@@ -29,6 +29,6 @@ pure:
     nothrow
     void serialize(scope ref OutputStream output) const
     {
-        output.write!long(m_id);
+        output.write!ulong(m_id);
     }
 }

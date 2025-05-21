@@ -1,9 +1,11 @@
 module mc.config;
 
+import core.time : Duration, seconds;
+
 import vibe.core.net : TCPListenOptions;
 
 import mc.util.log : Logger, LogLevel;
-import mc.world.position : BlockPos;
+import mc.world.position : ContinuousPos;
 
 @safe:
 
@@ -20,7 +22,10 @@ struct Config
 
     enum size_t ct_packetBufSize = 64 * 1024 * 1024;
 
-    enum BlockPos ct_spawnPos = BlockPos(16 + 8, 16, 16 + 8);
+    enum Duration ct_keepAliveTimeout = 15.seconds;
+    enum Duration ct_keepAliveInterval = 2.seconds;
+
+    enum ContinuousPos ct_spawnPos = ContinuousPos(16 + 8, 16, 16 + 8);
     enum uint ct_chunkViewDistance = 8;
 
     @disable this();
@@ -32,10 +37,10 @@ shared static this()
     import mc.data.blocks : BlocksByVersion, BlockSet;
     import mc.data.mc_version : McVersion;
     import mc.util.log : Logger;
-    import mc.world.chunk.chunk : Chunk;
     import mc.world.block.block : Block;
     import mc.world.block.block_state : BlockState;
     import mc.world.block.property : PropertyValue;
+    import mc.world.chunk.chunk : Chunk;
     import mc.world.position : BlockPos, ChunkPos, ChunkRelativeBlockPos;
     import mc.world.world : g_world;
 

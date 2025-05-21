@@ -1,13 +1,10 @@
 module mc.server.server;
 
-import vibe.core.core : runEventLoopOnce;
 import vibe.core.net : listenTCP_s, TCPConnection, TCPListenOptions;
 
 import mc.config : Config;
+import mc.server.player_connection : PlayerConnection;
 import mc.util.log : Logger;
-import mc.player.player : PlayerConnection;
-import mc.player.player_info : PlayerInfo;
-import mc.world.world : World;
 
 @safe:
 

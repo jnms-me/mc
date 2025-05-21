@@ -1,6 +1,7 @@
 {
     "dscanner.ignoredKeys": [
         "dscanner.suspicious.object_const",
-        "dscanner.suspicious.length_subtraction"
+        "dscanner.suspicious.length_subtraction",
+        "dscanner.suspicious.redundant_attributes"
     ]
 }
