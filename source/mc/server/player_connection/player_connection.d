@@ -10,10 +10,7 @@ import vibe.core.task : Task;
 import mc.config : Config;
 import mc.protocol.enums : State;
 import mc.server.player : g_players, Player;
-import mc.server.player_connection.keep_alive : KeepAliveTask;
-import mc.server.player_connection.reader : ReaderTask;
-import mc.server.player_connection.task : PlayerConnectionTask;
-import mc.server.player_connection.writer : WriterTask;
+import mc.server.player_connection.task : KeepAliveTask, PlayerConnectionTask, ReaderTask, WriterTask;
 import mc.util.log : Logger;
 
 package:

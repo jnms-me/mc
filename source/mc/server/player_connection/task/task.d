@@ -1,4 +1,4 @@
-module mc.server.player_connection.task;
+module mc.server.player_connection.task.task;
 
 import vibe.core.core : runTask;
 import vibe.core.task : InterruptException, Task;

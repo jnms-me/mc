@@ -1,4 +1,4 @@
-module mc.server.player_connection.reader;
+module mc.server.player_connection.task.reader;
 
 import std.algorithm : map;
 import std.conv : hexString, to;
@@ -11,13 +11,12 @@ import vibe.core.net : TCPConnection;
 import mc.config : Config;
 import mc.protocol.enums : State;
 import mc.protocol.stream : EOFException, InputStream;
-import mc.server.player_connection.player_connection : PlayerConnection;
-import mc.server.player_connection.task : PlayerConnectionTask;
-import mc.server.player_connection.writer : WriterTask;
+import mc.server.player_connection : PlayerConnection;
+import mc.server.player_connection.task : PlayerConnectionTask, WriterTask;
 import mc.util.meta : enumSwitch;
 import packets = mc.protocol.packet.packets;
 
-package:
+package(mc.server.player_connection):
 @safe:
 
 final

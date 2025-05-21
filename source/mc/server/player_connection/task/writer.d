@@ -1,8 +1,7 @@
-module mc.server.player_connection.writer;
+module mc.server.player_connection.task.writer;
 
 import std.conv : to;
 import std.exception : assumeWontThrow;
-import std.json : JSONValue;
 import std.range.primitives : empty, front, popFront;
 
 import eventcore.core : IOMode;
@@ -10,20 +9,12 @@ import eventcore.core : IOMode;
 import vibe.core.core : yield;
 import vibe.core.net : TCPConnection;
 
-import mc.config : Config;
-import mc.protocol.enums : GameEvent, State;
-import mc.protocol.nbt : Nbt;
 import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
-import mc.server.player : g_players;
 import mc.server.player_connection.player_connection : PlayerConnection;
 import mc.server.player_connection.task : PlayerConnectionTask;
-import mc.world.chunk.chunk : Chunk;
-import mc.world.position : ChunkPos;
-import mc.world.world : g_world;
-import packets = mc.protocol.packet.packets;
 
-package:
+package(mc.server.player_connection):
 @safe:
 
 final
@@ -83,6 +74,17 @@ scope:
 
         m_outgoingPacketQueue ~= lengthPrefixedOutput;
     }
+
+    import std.json : JSONValue;
+
+    import mc.config : Config;
+    import mc.protocol.enums : GameEvent, State;
+    import mc.protocol.nbt : Nbt;
+    import mc.server.player : g_players;
+    import mc.world.chunk.chunk : Chunk;
+    import mc.world.position : ChunkPos;
+    import mc.world.world : g_world;
+    import packets = mc.protocol.packet.packets;
 
     pure
     void sendHexPacket(int protocol, string hexString)
