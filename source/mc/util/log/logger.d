@@ -1,9 +1,11 @@
 module mc.util.log.logger;
 
 import std.algorithm : map;
-import std.array : Appender;
+import std.array : Appender, join, split;
+import std.exception : assumeWontThrow;
 import std.format : format, formattedWrite;
 import std.stdio : File, stdout;
+import std.string : lastIndexOf;
 
 import mc.config : Config;
 import mc.util.log.log_level : LogLevel;
@@ -29,7 +31,17 @@ scope:
 
     static pure nothrow @nogc
     Logger moduleLogger(in string module_ = __MODULE__)
-        => Logger(module_);
+        => Logger(id: module_);
+
+    static pure nothrow
+    Logger packageLogger(in string module_ = __MODULE__)
+    {
+        const lastIndex = module_.lastIndexOf(".").assumeWontThrow;
+        if (lastIndex >= 0)
+            return Logger(id: module_[0 .. lastIndex]);
+        else
+            return Logger(id: module_);
+    }
 
     pure nothrow @nogc
     this(in string id)
