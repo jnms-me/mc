@@ -1,21 +1,17 @@
 module mc.main;
 
-import etc.linux.memoryerror : registerMemoryAssertHandler;
-
 import vibe.core.core : runEventLoopOnce;
 
 import mc.server.server : runServerTask;
-import mc.util.log : Logger;
 
 @safe:
 
-immutable log = Logger.moduleLogger;
-
-
-@trusted shared static
-this()
+@trusted
+shared static this()
 {
-    registerMemoryAssertHandler;
+    import memoryerror = etc.linux.memoryerror;
+    static if (is(typeof(memoryerror.registerMemoryAssertHandler)))
+        memoryerror.registerMemoryAssertHandler;
 }
 
 void main()
