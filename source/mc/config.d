@@ -13,7 +13,7 @@ immutable log = Logger.moduleLogger;
 
 struct Config
 {
-    enum LogLevel ct_logLevel = LogLevel.trace;
+    enum LogLevel ct_logLevel = LogLevel.diagnostic;
 
     enum string ct_mcDataRootPath = "./mc-data";
 

@@ -21,7 +21,7 @@ class PlayerConnection
 {
     private
     {
-        Logger m_log = Logger.moduleLogger.derive("PlayerConnection");
+        Logger m_log = Logger.packageLogger.derive("PlayerConnection");
 
         TCPConnection m_tcpConn;
 
@@ -59,7 +59,8 @@ scope:
         m_log.info!"Client connected";
     }
 
-    private ~this()
+    private
+    ~this()
     {
         cleanup;
     }
@@ -71,19 +72,19 @@ scope:
         m_writerTask    = new WriterTask(this);
         m_keepAliveTask = new KeepAliveTask(this);
 
-        while (allTasks[].all)
+        while (allTasks.all!(t => t && t.getTask.running))
             yield;
 
         cleanup;
     }
 
     private
-    void cleanup()
+    void cleanup() @trusted
     {
         m_player && m_player.unregister;
 
-        allTasks[].each!(t => t && t.getTask.interrupt);
-        allTasks[].each!(t => t && t.getTask.join);
+        allTasks.each!(t => t && t.getTask.interrupt);
+        allTasks.each!(t => t && t.getTask.join);
     }
 
     pure nothrow @nogc
@@ -95,8 +96,29 @@ scope:
         => m_tcpConn;
 
     pure nothrow @nogc
-    PlayerConnectionTask[3] allTasks()
-        => [m_readerTask, m_writerTask, m_keepAliveTask];
+    auto allTasks()
+    {
+        struct Range
+        {
+            PlayerConnection m_instance;
+            int m_i;
+            PlayerConnectionTask front()
+            {
+                final switch (m_i)
+                {
+                    case 0: return m_instance.m_readerTask;
+                    case 1: return m_instance.m_writerTask;
+                    case 2: return m_instance.m_keepAliveTask;
+                }
+            }
+            void popFront()
+            {
+                m_i++;
+            }
+            bool empty() => m_i == 2;
+        }
+        return Range(this);
+    }
 
     pure nothrow @nogc
     ReaderTask getReaderTask()
@@ -121,6 +143,10 @@ scope:
         debug m_log.dbg!"Switched to state %s"(m_state);
     }
 
+    pure nothrow @nogc
+    Player getPlayer()
+        => m_player;
+
     pure
     void createPlayer(in UUID uuid, in string userName)
     in (m_player is null)
@@ -131,8 +157,4 @@ scope:
             pos: Config.ct_spawnPos,
         );
     }
-
-    pure nothrow @nogc
-    Player getPlayer()
-        => m_player;
 }

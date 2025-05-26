@@ -1,7 +1,7 @@
 module mc.server.player_connection.task.reader;
 
 import std.algorithm : map;
-import std.conv : hexString, to;
+import std.conv : ConvException, hexString, to;
 import std.format : f = format;
 
 import eventcore.core : IOMode;
@@ -10,6 +10,7 @@ import vibe.core.net : TCPConnection;
 
 import mc.config : Config;
 import mc.protocol.enums : State;
+import mc.protocol.packet.traits : getPacketImplForProtocolMember;
 import mc.protocol.stream : EOFException, InputStream;
 import mc.server.player_connection : PlayerConnection;
 import mc.server.player_connection.task : PlayerConnectionTask, WriterTask;
@@ -29,6 +30,7 @@ scope:
     out (; m_task)
     {
         super(playerConn);
+        rederiveLogger;
         start;
     }
 
@@ -58,7 +60,7 @@ scope:
                 // Call readVar
                 size_t lengthPrefix;
                 try
-                    lengthPrefix = input.readVar!int.to!size_t;
+                    lengthPrefix = input.readVar!uint.to!size_t;
                 catch (EOFException e)
                     break;
 
@@ -74,7 +76,7 @@ scope:
 
             foreach (InputStream input; readPackets.map!InputStream)
             {
-                const uint protocolUint;
+                const uint protocolUint = input.readVar!uint;
                 handleRawPacket(protocolUint, input);
             }
         }
@@ -89,7 +91,7 @@ scope:
     }
 
     private
-    void handleRawPacketBodyInState(State ct_state)(in uint protocolUint, scope ref InputStream input)
+    void handleRawPacketBodyInState(alias ct_state)(in uint protocolUint, scope ref InputStream input)
     {
         static if (is(mixin(f!"packets.%s.client"(ct_state.stringof)) client == module))
         {
@@ -119,8 +121,8 @@ scope:
     {
         static if (is(getPacketImplForProtocolMember!protocolMember Packet))
         {
-            Packet packet = Packet.deserialize(input);
             debug m_log.dbg!"Got a %s"(Packet.stringof);
+            Packet packet = Packet.deserialize(input);
             this.handlePacket(packet);
         }
         else
@@ -199,7 +201,7 @@ scope:
         // World spawn pos?
         writer.sendHexPacket(0x5b, hexString!"0000020000008fc100000000");
 
-        writer.sendWorldTime;
+        writer.sendAllChunks;
 
         m_playerConn.getKeepAliveTask.startSending;
     }
@@ -264,5 +266,5 @@ scope:
 
     private pure nothrow @nogc
     WriterTask writer()
-        => writer;
+        => m_playerConn.getWriterTask;
 }

@@ -32,6 +32,7 @@ scope:
     out (; m_task)
     {
         super(playerConn);
+        rederiveLogger;
         start;
     }
 
