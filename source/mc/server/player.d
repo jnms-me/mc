@@ -34,12 +34,6 @@ scope:
     }
 
     package(mc.server) synchronized
-    ~this()
-    {
-        unregister;
-    }
-
-    package(mc.server) synchronized
     void register()
     {
         g_players[m_uuid] = this;

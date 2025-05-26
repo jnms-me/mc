@@ -35,7 +35,7 @@ void handleConnection(TCPConnection conn)
             log.error!"%s"((() @trusted => e.toString)());
         }
 
-        log.error!"Connection %s closed"(conn.remoteAddress);
+        log.warn!"Connection %s closed"(conn.remoteAddress);
     }
     catch(Exception)
         assert(false, "failed writing log");

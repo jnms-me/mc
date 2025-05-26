@@ -21,7 +21,7 @@ class PlayerConnection
 {
     private
     {
-        Logger m_log = Logger.packageLogger.derive("PlayerConnection");
+        Logger m_log = Logger("PlayerConnection");
 
         TCPConnection m_tcpConn;
 
@@ -60,22 +60,16 @@ scope:
     }
 
     private
-    ~this()
-    {
-        cleanup;
-    }
-
-    private
     void runTasks()
     {
+        scope (exit) cleanup;
+
         m_readerTask    = new ReaderTask(this);
         m_writerTask    = new WriterTask(this);
         m_keepAliveTask = new KeepAliveTask(this);
 
         while (allTasks.all!(t => t && t.getTask.running))
             yield;
-
-        cleanup;
     }
 
     private
@@ -115,7 +109,7 @@ scope:
             {
                 m_i++;
             }
-            bool empty() => m_i == 2;
+            bool empty() => m_i > 2;
         }
         return Range(this);
     }
