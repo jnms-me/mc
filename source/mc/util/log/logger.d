@@ -68,12 +68,12 @@ scope:
         }
     }
 
-    void trace   (string fmt, Args...)(lazy Args args) const => log!(LogLevel.trace,      fmt, Args)(args);
-    void dbg     (string fmt, Args...)(lazy Args args) const => log!(LogLevel.debug_,     fmt, Args)(args);
-    void diag    (string fmt, Args...)(lazy Args args) const => log!(LogLevel.diagnostic, fmt, Args)(args);
-    void info    (string fmt, Args...)(lazy Args args) const => log!(LogLevel.info,       fmt, Args)(args);
-    void warn    (string fmt, Args...)(lazy Args args) const => log!(LogLevel.warning,    fmt, Args)(args);
-    void error   (string fmt, Args...)(lazy Args args) const => log!(LogLevel.error,      fmt, Args)(args);
-    void critical(string fmt, Args...)(lazy Args args) const => log!(LogLevel.critical,   fmt, Args)(args);
     void fatal   (string fmt, Args...)(lazy Args args) const => log!(LogLevel.fatal,      fmt, Args)(args);
+    void critical(string fmt, Args...)(lazy Args args) const => log!(LogLevel.critical,   fmt, Args)(args);
+    void error   (string fmt, Args...)(lazy Args args) const => log!(LogLevel.error,      fmt, Args)(args);
+    void warn    (string fmt, Args...)(lazy Args args) const => log!(LogLevel.warning,    fmt, Args)(args);
+    void info    (string fmt, Args...)(lazy Args args) const => log!(LogLevel.info,       fmt, Args)(args);
+    void diag    (string fmt, Args...)(lazy Args args) const => log!(LogLevel.diagnostic, fmt, Args)(args);
+    void dbg     (string fmt, Args...)(lazy Args args) const => log!(LogLevel.debug_,     fmt, Args)(args);
+    void trace   (string fmt, Args...)(lazy Args args) const => log!(LogLevel.trace,      fmt, Args)(args);
 }
