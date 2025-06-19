@@ -10,6 +10,8 @@ import std.string : lastIndexOf;
 import mc.config : Config;
 import mc.util.log.log_level : LogLevel;
 
+// TODO: support chain of const parent scopes, scopes emit a static or dynamic string
+
 @safe:
 
 private @trusted nothrow @nogc
