@@ -1,6 +1,7 @@
 module mc.server.player_connection.player_connection;
 
 import std.algorithm : all, among, each;
+import std.range : only;
 import std.uuid : UUID;
 
 import vibe.core.core : yield;
@@ -91,28 +92,7 @@ scope:
 
     pure nothrow @nogc
     auto allTasks()
-    {
-        struct Range
-        {
-            PlayerConnection m_instance;
-            int m_i;
-            PlayerConnectionTask front()
-            {
-                final switch (m_i)
-                {
-                    case 0: return m_instance.m_readerTask;
-                    case 1: return m_instance.m_writerTask;
-                    case 2: return m_instance.m_keepAliveTask;
-                }
-            }
-            void popFront()
-            {
-                m_i++;
-            }
-            bool empty() => m_i > 2;
-        }
-        return Range(this);
-    }
+        => only(m_readerTask, m_writerTask, m_keepAliveTask);
 
     pure nothrow @nogc
     ReaderTask getReaderTask()
