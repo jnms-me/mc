@@ -2,6 +2,7 @@ module mc.protocol.packet.play.client;
 
 public import mc.protocol.packet.play.client.client_tick_end : ClientTickEndPacket;
 public import mc.protocol.packet.play.client.keep_alive : KeepAlivePacket;
+public import mc.protocol.packet.play.client.player_command : PlayerCommandPacket;
 public import mc.protocol.packet.play.client.player_input : PlayerInputPacket;
 public import mc.protocol.packet.play.client.set_player_position : SetPlayerPositionPacket;
 public import mc.protocol.packet.play.client.set_player_position_rotation : SetPlayerPositionRotationPacket;
@@ -52,7 +53,7 @@ enum Protocol : int
                                      placeRecipe                 = 0x25,
                                      playerAbilities             = 0x26,
                                      playerAction                = 0x27,
-                                     playerCommand               = 0x28,
+    @PlayerCommandPacket             playerCommand               = 0x28,
     @PlayerInputPacket               playerInput                 = 0x29,
                                      playerLoaded                = 0x2A,
                                      pong                        = 0x2B,

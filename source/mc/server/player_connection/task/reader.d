@@ -259,10 +259,11 @@ scope:
     }
 
     private pure nothrow @nogc void handlePacket(packets.play.client.ClientTickEndPacket) const {}
+    private pure nothrow @nogc void handlePacket(packets.play.client.PlayerCommandPacket) const {}
+    private pure nothrow @nogc void handlePacket(packets.play.client.PlayerInputPacket) const {}
     private pure nothrow @nogc void handlePacket(packets.play.client.SetPlayerPositionPacket) const {}
     private pure nothrow @nogc void handlePacket(packets.play.client.SetPlayerPositionRotationPacket) const {}
     private pure nothrow @nogc void handlePacket(packets.play.client.SetPlayerRotationPacket) const {}
-    private pure nothrow @nogc void handlePacket(packets.play.client.PlayerInputPacket) const {}
 
     private pure nothrow @nogc
     WriterTask writer()

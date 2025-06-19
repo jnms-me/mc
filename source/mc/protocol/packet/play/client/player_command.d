@@ -7,11 +7,11 @@ import mc.protocol.stream : InputStream;
 @safe:
 
 final
-class ClientTickEndPacket
+class PlayerCommandPacket
 {
     static assert(isClientPacket!(typeof(this)));
 
-    enum Protocol ct_protocol = Protocol.clientTickEnd;
+    enum Protocol ct_protocol = Protocol.playerCommand;
 
 scope:
 pure:
