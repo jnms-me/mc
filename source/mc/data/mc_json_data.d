@@ -16,7 +16,7 @@ class McJsonData
 {
     // Singleton
     private static McJsonData g_instance = new McJsonData;
-    private pure nothrow @nogc this()() scope {}
+    private pure nothrow @nogc this() scope {}
     static nothrow @nogc McJsonData instance() => g_instance;
 
     private

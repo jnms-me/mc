@@ -9,6 +9,7 @@ import eventcore.core : IOMode;
 import vibe.core.net : TCPConnection;
 
 import mc.config : Config;
+import mc.kelder : Kelder;
 import mc.protocol.enums : State;
 import mc.protocol.packet.traits : getPacketImplForProtocolMember;
 import mc.protocol.stream : EOFException, InputStream;
@@ -144,12 +145,14 @@ scope:
     private
     void handlePacket(packets.status.client.StatusRequestPacket)
     {
+        m_log.info!"Sending status response";
         writer.sendStatusResponse;
     }
 
-    private pure nothrow
+    private
     void handlePacket(packets.status.client.PingRequestPacket packet)
     {
+        m_log.info!"Sending ping response";
         writer.sendPacket(new packets.status.server.PongResponsePacket(packet.getPayload));
     }
 
@@ -183,7 +186,7 @@ scope:
     {
         m_playerConn.switchState(State.play);
 
-        m_playerConn.getPlayer.register;
+        m_playerConn.joinDefaultWorld;
 
         writer.sendPacket(new packets.play.server.LoginPacket);
 
@@ -218,44 +221,10 @@ scope:
     {
         m_log.diag!"useItemOnPacket: pos = %s"(packet.getPos);
 
-        import mc.config : onChangeLever;
-        import mc.data.blocks : BlocksByVersion, BlockSet;
-        import mc.data.mc_version : McVersion;
-        import mc.world.block.property : PropertyValue;
-        import mc.world.position : BlockPos;
-        import mc.world.world : g_world;
+        Kelder.instance.onUseItemOnPacket(packet);
 
-        const leverPos = BlockPos(24, 16, 28);
-        if (packet.getPos == leverPos)
-        {
-            m_log.info!"lever hit";
-
-            const BlockSet blocks = BlocksByVersion.instance[McVersion("pc", "1.21.4")];
-            const leverOff = blocks["lever"].getState([
-                "face": PropertyValue("floor"),
-                "facing": PropertyValue("south"),
-                "powered": PropertyValue(false),
-            ]);
-            const leverOn = blocks["lever"].getState([
-                "face": PropertyValue("floor"),
-                "facing": PropertyValue("south"),
-                "powered": PropertyValue(true),
-            ]);
-
-            if (g_world.getBlock(leverPos) == leverOn.getGlobalId)
-            {
-                m_log.info!"lever is now off";
-                g_world.setBlock(leverPos, leverOff);
-                onChangeLever(false);
-            }
-            else
-            {
-                m_log.info!"lever is now on";
-                g_world.setBlock(leverPos, leverOn);
-                onChangeLever(true);
-            }
-            writer.sendAllChunks;
-        }
+        // TODO: replace with block updates
+        writer.sendAllChunks;
     }
 
     private pure nothrow @nogc void handlePacket(packets.play.client.ClientTickEndPacket) const {}

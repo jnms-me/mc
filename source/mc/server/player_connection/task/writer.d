@@ -13,6 +13,7 @@ import mc.protocol.packet.traits : isServerPacket;
 import mc.protocol.stream : OutputStream;
 import mc.server.player_connection.player_connection : PlayerConnection;
 import mc.server.player_connection.task : PlayerConnectionTask;
+import mc.world.world : World;
 
 package(mc.server.player_connection):
 @safe:
@@ -81,10 +82,8 @@ scope:
     import mc.config : Config;
     import mc.protocol.enums : GameEvent, State;
     import mc.protocol.nbt : Nbt;
-    import mc.server.player : g_players;
     import mc.world.chunk.chunk : Chunk;
     import mc.world.position : ChunkPos;
-    import mc.world.world : g_world;
     import packets = mc.protocol.packet.packets;
 
     pure
@@ -121,7 +120,7 @@ scope:
             "preventsChatReports": JSONValue(true),
         ]);
         JSONValue json = ct_jsonStatusTemplate;
-        json["players"]["online"] = g_players.length;
+        json["players"]["online"] = m_playerConn.getServer.getWorld.playerCount;
         const jsonString = json.toString;
         sendPacket(new packets.status.server.StatusResponsePacket(jsonString));
     }
@@ -266,6 +265,7 @@ scope:
 
         sendPacket(new packets.play.server.ChunkBatchStartPacket);
 
+        World world = m_playerConn.getServer.getWorld;
         int chunksSent;
         foreach (int x; pos.x - dist - 1 .. pos.x + dist + 2)
             foreach (int z; pos.z - dist - 1 .. pos.z + dist + 2)
@@ -273,7 +273,7 @@ scope:
                 Nbt heightMaps = Nbt.emptyCompound;
                 const(Chunk)[] chunks;
                 foreach (int y; 0 .. 4)
-                    chunks ~= g_world.getChunk(ChunkPos(x, y, z));
+                    chunks ~= world.getChunk(ChunkPos(x, y, z));
                 sendPacket(new packets.play.server.ChunkDataPacket(x, z, heightMaps, chunks));
                 chunksSent++;
             }

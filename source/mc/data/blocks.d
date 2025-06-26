@@ -24,7 +24,7 @@ class BlocksByVersion
 {
     // Singleton
     private static BlocksByVersion g_instance = new BlocksByVersion;
-    private pure nothrow @nogc this()() scope {}
+    private pure nothrow @nogc this() scope {}
     static nothrow @nogc BlocksByVersion instance() => g_instance;
 
     private

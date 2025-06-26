@@ -2,7 +2,9 @@ module mc.main;
 
 import vibe.core.core : runEventLoopOnce;
 
-import mc.server.server : runServerTask;
+import mc.config : Config;
+import mc.kelder : Kelder;
+import mc.server : Server;
 
 @safe:
 
@@ -16,7 +18,10 @@ shared static this()
 
 void main()
 {
-    runServerTask;
+    Server server = new Server(Config.ct_listenAddresses, Config.ct_listenPort);
+    server.runAsync;
+
+    Kelder.instance.generateWorld(server.getWorld);
 
     while (true)
     {

@@ -1,6 +1,6 @@
 module mc.server.player_connection.player_connection;
 
-import std.algorithm : all, among, each;
+import std.algorithm : all, each;
 import std.range : only;
 import std.uuid : UUID;
 
@@ -10,8 +10,10 @@ import vibe.core.task : Task;
 
 import mc.config : Config;
 import mc.protocol.enums : State;
-import mc.server.player : g_players, Player;
+import mc.server.player : Player;
+import mc.world.world : World;
 import mc.server.player_connection.task : KeepAliveTask, PlayerConnectionTask, ReaderTask, WriterTask;
+import mc.server.server;
 import mc.util.log : Logger;
 
 package:
@@ -24,6 +26,7 @@ class PlayerConnection
     {
         Logger m_log = Logger("PlayerConnection");
 
+        Server m_server;
         TCPConnection m_tcpConn;
 
         ReaderTask m_readerTask;
@@ -33,35 +36,25 @@ class PlayerConnection
         State m_state;
 
         Player m_player;
+        World m_world;
     }
 
 scope:
     pure nothrow @nogc
     invariant
     {
+        assert(m_server);
         assert(m_tcpConn);
-        if (m_state.among(State.config, State.play))
-            assert(m_player !is null);
     }
 
-    package(mc.server) static
-    void handleConnection(scope ref TCPConnection tcpConn)
-    in (Task.getThis)
+    this(scope Server server, scope ref TCPConnection tcpConn)
     {
-        PlayerConnection instance = new PlayerConnection(tcpConn);
-        instance.runTasks;
-    }
-
-    private
-    this(scope ref TCPConnection tcpConn)
-    {
+        m_server = server;
         m_tcpConn = tcpConn;
         m_log = m_log.derive(tcpConn.remoteAddress.toString);
-        m_log.info!"Client connected";
     }
 
-    private
-    void runTasks()
+    void run()
     {
         scope (exit) cleanup;
 
@@ -76,7 +69,7 @@ scope:
     private
     void cleanup() @trusted
     {
-        m_player && m_player.unregister;
+        m_world && m_player && m_world.playerLeave(m_player);
 
         allTasks.each!(t => t && t.getTask.interrupt);
         allTasks.each!(t => t && t.getTask.join);
@@ -91,20 +84,17 @@ scope:
         => m_tcpConn;
 
     pure nothrow @nogc
-    auto allTasks()
-        => only(m_readerTask, m_writerTask, m_keepAliveTask);
+    Server getServer()
+        => m_server;
 
     pure nothrow @nogc
-    ReaderTask getReaderTask()
-        => m_readerTask;
+    {
+        auto allTasks() => only(m_readerTask, m_writerTask, m_keepAliveTask);
 
-    pure nothrow @nogc
-    WriterTask getWriterTask()
-        => m_writerTask;
-
-    pure nothrow @nogc
-    KeepAliveTask getKeepAliveTask()
-        => m_keepAliveTask;
+        ReaderTask    getReaderTask()    => m_readerTask;
+        WriterTask    getWriterTask()    => m_writerTask;
+        KeepAliveTask getKeepAliveTask() => m_keepAliveTask;
+    }
 
     pure nothrow @nogc
     State getState() const
@@ -121,7 +111,7 @@ scope:
     Player getPlayer()
         => m_player;
 
-    pure
+    pure nothrow
     void createPlayer(in UUID uuid, in string userName)
     in (m_player is null)
     {
@@ -130,5 +120,12 @@ scope:
             userName: userName,
             pos: Config.ct_spawnPos,
         );
+        m_log = m_log.derive(userName);
+        allTasks.each!(t => t.rederiveLogger);
+    }
+
+    void joinDefaultWorld()
+    {
+        m_server.getWorld.playerJoin(m_player);
     }
 }
