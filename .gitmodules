@@ -1,3 +1,5 @@
 [submodule "mc-data"]
 path = mc-data
 url = https://github.com/PrismarineJS/minecraft-data.git
+branch = 3.90.0
+update = rebase
