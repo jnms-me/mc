@@ -213,7 +213,7 @@ pure:
     nothrow @nogc
     size_t toIndex() scope const
         => x + (z * ct_chunkBlockLength) + (y * ct_chunkBlockLength ^^ 2);
-    
+
     alias vector this;
 }
 

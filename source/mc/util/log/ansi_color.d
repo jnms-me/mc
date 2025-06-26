@@ -31,12 +31,12 @@ pure nothrow:
 const:
     AnsiColor fg() => AnsiColor(m_prefix, m_color + 30);
     AnsiColor bg() => AnsiColor(m_prefix, m_color + 40);
-    
+
     AnsiColor bold()          => AnsiColor(m_prefix ~ 1, m_color);
     AnsiColor italic()        => AnsiColor(m_prefix ~ 3, m_color);
     AnsiColor underline()     => AnsiColor(m_prefix ~ 3, m_color);
     AnsiColor strikethrough() => AnsiColor(m_prefix ~ 9, m_color);
-    
+
     AnsiColor black()  => AnsiColor(m_prefix, m_color);
     AnsiColor red()    => AnsiColor(m_prefix, m_color + 1);
     AnsiColor green()  => AnsiColor(m_prefix, m_color + 2);
@@ -49,6 +49,6 @@ const:
         const numbers = m_prefix ~ [m_color];
         return f!"\033[%(%u;%)m"(numbers).assumeWontThrow;
     }
-    
+
     alias toString this;
 }

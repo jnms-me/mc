@@ -84,7 +84,7 @@ pure:
         {
             m_blocks = new SingleValueContainer(id);
         }
-        
+
         m_nonAirBlockCount = id == 0 ? 0 : ct_blocksPerChunk;
     }
 

@@ -56,7 +56,7 @@ pure:
     private nothrow @nogc
     size_t dataLength() const
         => m_valueCount.ceilDiv(valuesPerUlong);
-    
+
     private nothrow @nogc
     auto getValueLocation(const size_t i) const
     in (i < m_valueCount)
@@ -67,7 +67,7 @@ pure:
         const ulong mask = ((1 << m_bitsPerValue) - 1) << offset;
         return tuple!("index", "offset", "mask")(index, offset, mask);
     }
-    
+
     nothrow @nogc
     uint opIndex(const size_t i) const
     {

@@ -139,8 +139,8 @@ scope:
                 "width": Nbt(int(1)),
                 "height": Nbt(int(1)),
                 "title": Nbt([
-                  "color": Nbt("yellow"),
-                  "translate": Nbt("painting.minecraft.alban.title"),
+                    "color": Nbt("yellow"),
+                    "translate": Nbt("painting.minecraft.alban.title"),
                 ]),
                 "author": Nbt([
                     "color": Nbt("gray"),
@@ -219,11 +219,11 @@ scope:
                     "downfall": Nbt(float(0.4)),
                     "carvers": Nbt.emptyList,
                     "effects": Nbt([
-                      "fog_color": Nbt(int(12_638_463)),
-                      "sky_color": Nbt(int(7_907_327)),
-                      "water_color": Nbt(int(4_159_204)),
-                      "water_fog_color": Nbt(int(329_011)),
-                    //   "music_volume": Nbt(float(1.0)),
+                        "fog_color": Nbt(int(12_638_463)),
+                        "sky_color": Nbt(int(7_907_327)),
+                        "water_color": Nbt(int(4_159_204)),
+                        "water_fog_color": Nbt(int(329_011)),
+                        // "music_volume": Nbt(float(1.0)),
                     ]),
                     "features": Nbt.emptyList,
                     "spawners": Nbt.emptyCompound,

@@ -35,7 +35,7 @@ scope:
     {
         assert(m_wakeEvent);
     }
-    
+
     nothrow
     this(scope PlayerConnection playerConn)
     in (playerConn !is null)

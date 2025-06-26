@@ -57,7 +57,7 @@ pure:
     override nothrow
     uint valueCount()
         => 2;
-    
+
     override
     uint valueToId(in PropertyValue propertyValue)
     {

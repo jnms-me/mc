@@ -43,7 +43,7 @@ pure:
     package(mc.util.log) nothrow @nogc
     string getFmt() const
         => m_fmt;
-    
+
     nothrow @nogc
     int opCmp(in LogLevel rhs) const
         => int(m_level - rhs.m_level);

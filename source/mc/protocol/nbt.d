@@ -102,10 +102,10 @@ pure:
     static pure nothrow @nogc
     typeof(this) emptyCompound()
         => typeof(this)(typeof(m_contents.compound).init);
-    
+
     TagType tagType() const
         => m_tagType;
-    
+
     private @trusted pragma(inline, true)
     ref auto get(string ct_typeName)() inout return
     {
@@ -199,7 +199,7 @@ pure:
             }
             break;
 
-        default: 
+        default:
             assert(false, "Invalid Nbt tagType, did you initialize it?");
         }
     }
