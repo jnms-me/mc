@@ -116,8 +116,8 @@ class Kelder
 
         const bool oldState = m_world.getBlock(ct_leverPos) == m_leverOnBS.getGlobalId;
         const bool newState = !oldState;
-        m_log.info!"Lever is now %s"(oldState ? "on" : "off");
-        m_world.setBlock(ct_leverPos, oldState ? m_leverOnBS : m_leverOffBS);
-        executeShell(f!`mosquitto_pub -t 'zigbee2mqtt/lights/set' -m '{"state": "%s"}'`(oldState ? "ON" : "OFF"));
+        m_log.info!"Lever is now %s"(newState ? "on" : "off");
+        m_world.setBlock(ct_leverPos, newState ? m_leverOnBS : m_leverOffBS);
+        executeShell(f!`mosquitto_pub -t 'zigbee2mqtt/lights/set' -m '{"state": "%s"}'`(newState ? "ON" : "OFF"));
     }
 }
